@@ -1,0 +1,38 @@
+{
+  "name": "@promptlayer/mcp-server",
+  "version": "1.0.0",
+  "description": "Model Context Protocol server for PromptLayer",
+  "type": "module",
+  "main": "build/index.js",
+  "bin": {
+    "promptlayer-mcp": "build/index.js"
+  },
+  "scripts": {
+    "build": "tsc && chmod +x build/index.js",
+    "prepare": "npm run build",
+    "watch": "tsc --watch",
+    "dev": "tsx src/index.ts",
+    "generate:mcp-json": "tsx scripts/generate-mcp-json.ts"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "promptlayer",
+    "prompt-management"
+  ],
+  "author": "PromptLayer",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.3",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15",
+    "tsx": "^4.20.0",
+    "typescript": "^5.7.0",
+    "zod-to-json-schema": "^3.25.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
