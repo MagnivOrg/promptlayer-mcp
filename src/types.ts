@@ -428,33 +428,6 @@ export type ListPromptTemplatesParams = Omit<
   "api_key"
 >;
 
-// ── Response types (used for client typing only, not sent to LLM) ────────
-
-export type GetPromptTemplateResponse = {
-  id: number;
-  workspace_id: number;
-  prompt_name: string;
-  prompt_template: Record<string, unknown>;
-  metadata: Record<string, unknown> | null;
-  commit_message?: string | null;
-  llm_kwargs?: Record<string, unknown> | null;
-  version: number;
-  tags: unknown[];
-  [key: string]: unknown;
-};
-
-export type ListPromptTemplatesResponse = {
-  has_next: boolean;
-  has_prev: boolean;
-  items: Array<Record<string, unknown>>;
-  next_num: number | null;
-  prev_num: number | null;
-  page: number;
-  pages: number;
-  per_page: number;
-  total: number;
-};
-
 
 export const TOOL_DEFINITIONS = {
   // ── Prompt Templates ────────────────────────────────────────────────
