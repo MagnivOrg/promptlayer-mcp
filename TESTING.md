@@ -70,6 +70,9 @@ When adding a new exception: add the exact issue string to `KNOWN_EXCEPTIONS` in
 5. Add mapping in `scripts/extract-mcp-tools.ts` (`TOOL_TO_ENDPOINT`)
 6. `npm run sync:check` -- verify it passes
 
+## Verifying Against the Backend Source Code
+
+The OpenAPI spec can lag behind the actual backend. For a deeper field-by-field audit against the backend source, see `BACKEND_VERIFICATION.md` (gitignored, available internally).
 ## Files
 
 | File | Purpose |
