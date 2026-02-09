@@ -70,6 +70,79 @@ When adding a new exception: add the exact issue string to `KNOWN_EXCEPTIONS` in
 5. Add mapping in `scripts/extract-mcp-tools.ts` (`TOOL_TO_ENDPOINT`)
 6. `npm run sync:check` -- verify it passes
 
+## Verifying Against the Backend Source Code
+
+The OpenAPI spec and docs can lag behind the actual server. To verify against the real backend:
+
+### Prerequisites
+
+You need GitHub access to `MagnivOrg/promptlayer-app` (the backend repo). The Cursor Cloud Agent token must be scoped to include it.
+
+### What to do
+
+1. Clone the backend repo:
+```bash
+gh repo clone MagnivOrg/promptlayer-app /tmp/promptlayer-app
+```
+
+2. Find the route definitions. The backend is likely Flask or FastAPI. Search for route registrations:
+```bash
+# FastAPI
+rg "(@app\.|@router\.)(get|post|put|patch|delete)" /tmp/promptlayer-app --type py -l
+
+# Flask
+rg "(\.route|\.add_url_rule)" /tmp/promptlayer-app --type py -l
+```
+
+3. For each endpoint in our MCP (listed in `scripts/extract-mcp-tools.ts` TOOL_TO_ENDPOINT), find the matching route handler in the backend and compare:
+   - **Path**: does the route path match?
+   - **Method**: GET/POST/PATCH/DELETE match?
+   - **Request body / query params**: compare the Pydantic model (FastAPI) or request parsing (Flask) field-by-field against our Zod schema in `src/types.ts`
+   - **Required vs optional**: check defaults in the backend model
+   - **Field types**: string, integer, boolean, array, object -- do they match?
+
+4. Specific things to look for:
+   - Endpoints that exist in the backend but are **not in the OpenAPI spec or docs** (undocumented endpoints)
+   - Fields accepted by the backend that aren't in the OpenAPI spec (the spec may be auto-generated but filtered)
+   - Fields in the OpenAPI spec that the backend actually ignores
+   - **Renamed or moved endpoints** -- the backend may have aliases or redirects
+
+5. Key files/patterns to search:
+```bash
+# Find all API route files
+rg "APIRouter|Blueprint" /tmp/promptlayer-app --type py -l
+
+# Find specific endpoint handlers
+rg "prompt.templates|prompt-templates" /tmp/promptlayer-app --type py -l
+rg "track.score|track-score|track_score" /tmp/promptlayer-app --type py -l
+rg "log.request|log-request|log_request" /tmp/promptlayer-app --type py -l
+rg "workflow|agent" /tmp/promptlayer-app --type py -l
+rg "report|evaluation" /tmp/promptlayer-app --type py -l
+rg "dataset" /tmp/promptlayer-app --type py -l
+rg "spans" /tmp/promptlayer-app --type py -l
+rg "folder" /tmp/promptlayer-app --type py -l
+
+# Find Pydantic models (request schemas)
+rg "class.*BaseModel" /tmp/promptlayer-app --type py -l
+```
+
+6. For each discrepancy found, update:
+   - `src/types.ts` -- fix the Zod schema
+   - `scripts/diff-endpoints.ts` -- add/remove known exceptions
+   - `src/types.ts` -- add `// NOTE:` comments on deviations
+
+7. Run `npm run sync:check` to confirm the OpenAPI-level check still passes after changes.
+
+### Automating this (future)
+
+A script could be written (`scripts/verify-against-backend.ts`) that:
+1. Clones `promptlayer-app`
+2. Parses Python route definitions and Pydantic models using AST/regex
+3. Outputs a `backend-endpoints.json` in the same format as `openapi-endpoints.json`
+4. Runs the same diff logic
+
+This would give us a three-way comparison: **backend code** vs **OpenAPI spec** vs **MCP schemas**.
+
 ## Files
 
 | File | Purpose |
