@@ -12,7 +12,11 @@
     "prepare": "npm run build",
     "watch": "tsc --watch",
     "dev": "tsx src/index.ts",
-    "generate:mcp-json": "tsx scripts/generate-mcp-json.ts"
+    "generate:mcp-json": "tsx scripts/generate-mcp-json.ts",
+    "sync:fetch": "tsx scripts/fetch-openapi-endpoints.ts",
+    "sync:extract": "tsx scripts/extract-mcp-tools.ts",
+    "sync:diff": "tsx scripts/diff-endpoints.ts",
+    "sync:check": "npm run sync:fetch && npm run sync:extract && npm run sync:diff"
   },
   "keywords": [
     "mcp",
