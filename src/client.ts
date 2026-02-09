@@ -3,9 +3,6 @@
  * Makes direct REST API calls to PromptLayer
  */
 
-import { writeFileSync } from "fs";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
 import {
   GetPromptTemplateParams,
   GetPromptTemplateResponse,
@@ -14,39 +11,11 @@ import {
 } from "./types.js";
 import { buildQueryParams, handleApiError } from "./utils.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 export class PromptLayerClient {
-  private debugMode: boolean =
-    process.env.PROMPTLAYER_DEBUG === "true" ||
-    process.env.PROMPTLAYER_DEBUG === "1";
-  private debugPath: string = join(__dirname, "logs");
-
   constructor(
     private apiKey: string,
     private baseUrl: string = "https://api.promptlayer.com"
   ) {}
-
-  /**
-   * Write API response to a JSON file for testing/debugging
-   */
-  private writeDebugFile(endpoint: string, data: unknown): void {
-    if (!this.debugMode) return;
-
-    try {
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const filename = `api-response-${endpoint.replace(
-        /\//g,
-        "-"
-      )}-${timestamp}.json`;
-      const filepath = join(this.debugPath, filename);
-      writeFileSync(filepath, JSON.stringify(data, null, 2), "utf-8");
-      console.error(`[DEBUG] API response written to: ${filepath}`);
-    } catch (error) {
-      console.error(`[DEBUG] Failed to write debug file:`, error);
-    }
-  }
 
   private async request<T>(
     endpoint: string,
@@ -68,37 +37,7 @@ export class PromptLayerClient {
       throw await handleApiError(response);
     }
 
-    const data = (await response.json()) as T;
-
-    // Write response to file if debug mode is enabled
-    this.writeDebugFile(endpoint, data);
-
-    return data;
-  }
-
-  /**
-   * Make a multipart/form-data request (for file uploads)
-   */
-  private async requestFormData<T>(
-    endpoint: string,
-    formData: FormData
-  ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "X-API-KEY": this.apiKey,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw await handleApiError(response);
-    }
-
-    const data = (await response.json()) as T;
-    this.writeDebugFile(endpoint, data);
-    return data;
+    return (await response.json()) as T;
   }
 
   // ── Prompt Templates ──────────────────────────────────────────────────
@@ -135,9 +74,7 @@ export class PromptLayerClient {
     );
   }
 
-  async publishPromptTemplate(
-    body: Record<string, unknown>
-  ): Promise<unknown> {
+  async publishPromptTemplate(body: Record<string, unknown>): Promise<unknown> {
     return this.request<unknown>("/rest/prompt-templates", {
       method: "POST",
       body: JSON.stringify(body),
@@ -151,20 +88,14 @@ export class PromptLayerClient {
     );
   }
 
-  async createPromptLabel(
-    promptId: number,
-    body: Record<string, unknown>
-  ): Promise<unknown> {
+  async createPromptLabel(promptId: number, body: Record<string, unknown>): Promise<unknown> {
     return this.request<unknown>(`/prompts/${promptId}/label`, {
       method: "POST",
       body: JSON.stringify(body),
     });
   }
 
-  async movePromptLabel(
-    promptLabelId: number,
-    body: Record<string, unknown>
-  ): Promise<unknown> {
+  async movePromptLabel(promptLabelId: number, body: Record<string, unknown>): Promise<unknown> {
     return this.request<unknown>(`/prompt-labels/${promptLabelId}`, {
       method: "PATCH",
       body: JSON.stringify(body),
@@ -177,9 +108,9 @@ export class PromptLayerClient {
     });
   }
 
-  async getSnippetUsage(identifier: string): Promise<unknown> {
+  async getSnippetUsage(identifier: string, params?: Record<string, unknown>): Promise<unknown> {
     return this.request<unknown>(
-      `/prompt-templates/${encodeURIComponent(identifier)}/snippet-usage`,
+      `/prompt-templates/${encodeURIComponent(identifier)}/snippet-usage${buildQueryParams(params)}`,
       { method: "GET" }
     );
   }
@@ -230,9 +161,7 @@ export class PromptLayerClient {
 
   // ── Datasets ──────────────────────────────────────────────────────────
 
-  async listDatasets(
-    params?: Record<string, unknown>
-  ): Promise<unknown> {
+  async listDatasets(params?: Record<string, unknown>): Promise<unknown> {
     return this.request<unknown>(
       `/api/public/v2/datasets${buildQueryParams(params)}`,
       { method: "GET" }
@@ -246,32 +175,23 @@ export class PromptLayerClient {
     });
   }
 
-  async createDatasetVersionFromFile(
-    formData: FormData
-  ): Promise<unknown> {
-    return this.requestFormData<unknown>(
-      "/api/public/v2/dataset-versions/from-file",
-      formData
-    );
+  async createDatasetVersionFromFile(body: Record<string, unknown>): Promise<unknown> {
+    return this.request<unknown>("/api/public/v2/dataset-versions/from-file", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
   }
 
-  async createDatasetVersionFromFilterParams(
-    body: Record<string, unknown>
-  ): Promise<unknown> {
-    return this.request<unknown>(
-      "/api/public/v2/dataset-versions/from-filter-params",
-      {
-        method: "POST",
-        body: JSON.stringify(body),
-      }
-    );
+  async createDatasetVersionFromFilterParams(body: Record<string, unknown>): Promise<unknown> {
+    return this.request<unknown>("/api/public/v2/dataset-versions/from-filter-params", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
   }
 
   // ── Evaluations ───────────────────────────────────────────────────────
 
-  async listEvaluations(
-    params?: Record<string, unknown>
-  ): Promise<unknown> {
+  async listEvaluations(params?: Record<string, unknown>): Promise<unknown> {
     return this.request<unknown>(
       `/api/public/v2/evaluations${buildQueryParams(params)}`,
       { method: "GET" }
@@ -285,10 +205,7 @@ export class PromptLayerClient {
     });
   }
 
-  async runReport(
-    reportId: number,
-    body: Record<string, unknown>
-  ): Promise<unknown> {
+  async runReport(reportId: number, body: Record<string, unknown>): Promise<unknown> {
     return this.request<unknown>(`/reports/${reportId}/run`, {
       method: "POST",
       body: JSON.stringify(body),
@@ -296,15 +213,11 @@ export class PromptLayerClient {
   }
 
   async getReport(reportId: number): Promise<unknown> {
-    return this.request<unknown>(`/reports/${reportId}`, {
-      method: "GET",
-    });
+    return this.request<unknown>(`/reports/${reportId}`, { method: "GET" });
   }
 
   async getReportScore(reportId: number): Promise<unknown> {
-    return this.request<unknown>(`/reports/${reportId}/score`, {
-      method: "GET",
-    });
+    return this.request<unknown>(`/reports/${reportId}/score`, { method: "GET" });
   }
 
   async addReportColumn(body: Record<string, unknown>): Promise<unknown> {
@@ -314,10 +227,7 @@ export class PromptLayerClient {
     });
   }
 
-  async updateReportScoreCard(
-    reportId: number,
-    body: Record<string, unknown>
-  ): Promise<unknown> {
+  async updateReportScoreCard(reportId: number, body: Record<string, unknown>): Promise<unknown> {
     return this.request<unknown>(`/reports/${reportId}/score-card`, {
       method: "PATCH",
       body: JSON.stringify(body),
@@ -333,10 +243,8 @@ export class PromptLayerClient {
 
   // ── Agents / Workflows ────────────────────────────────────────────────
 
-  async listWorkflows(): Promise<unknown> {
-    return this.request<unknown>("/workflows", {
-      method: "GET",
-    });
+  async listWorkflows(params?: Record<string, unknown>): Promise<unknown> {
+    return this.request<unknown>(`/workflows${buildQueryParams(params)}`, { method: "GET" });
   }
 
   async createWorkflow(body: Record<string, unknown>): Promise<unknown> {
@@ -346,35 +254,21 @@ export class PromptLayerClient {
     });
   }
 
-  async patchWorkflow(
-    workflowIdOrName: string,
-    body: Record<string, unknown>
-  ): Promise<unknown> {
+  async patchWorkflow(workflowIdOrName: string, body: Record<string, unknown>): Promise<unknown> {
     return this.request<unknown>(
       `/rest/workflows/${encodeURIComponent(workflowIdOrName)}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify(body),
-      }
+      { method: "PATCH", body: JSON.stringify(body) }
     );
   }
 
-  async runWorkflow(
-    workflowName: string,
-    body: Record<string, unknown>
-  ): Promise<unknown> {
+  async runWorkflow(workflowName: string, body: Record<string, unknown>): Promise<unknown> {
     return this.request<unknown>(
       `/workflows/${encodeURIComponent(workflowName)}/run`,
-      {
-        method: "POST",
-        body: JSON.stringify(body),
-      }
+      { method: "POST", body: JSON.stringify(body) }
     );
   }
 
-  async getWorkflowVersionExecutionResults(
-    params: Record<string, unknown>
-  ): Promise<unknown> {
+  async getWorkflowVersionExecutionResults(params: Record<string, unknown>): Promise<unknown> {
     return this.request<unknown>(
       `/workflow-version-execution-results${buildQueryParams(params)}`,
       { method: "GET" }

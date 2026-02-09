@@ -53,17 +53,8 @@ export function registerDatasetHandlers(server: any) {
     fromFile.inputSchema.shape,
     createToolHandler(
       (client, args) => {
-        const { api_key: _, dataset_group_id, file_content, file_name } = args as {
-          dataset_group_id: number;
-          file_content: string;
-          file_name: string;
-          api_key?: string;
-        };
-        const blob = new Blob([file_content], { type: "application/octet-stream" });
-        const formData = new FormData();
-        formData.append("file", blob, file_name);
-        formData.append("dataset_group_id", String(dataset_group_id));
-        return client.createDatasetVersionFromFile(formData);
+        const { api_key: _, ...body } = args;
+        return client.createDatasetVersionFromFile(body);
       },
       () => "Dataset version creation from file initiated (async)"
     )

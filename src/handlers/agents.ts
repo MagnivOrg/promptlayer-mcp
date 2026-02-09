@@ -16,7 +16,10 @@ export function registerAgentHandlers(server: any) {
     listWf.description,
     listWf.inputSchema.shape,
     createToolHandler(
-      (client) => client.listWorkflows(),
+      (client, args) => {
+        const { api_key: _, ...params } = args;
+        return client.listWorkflows(params);
+      },
       (result) => {
         const r = result as unknown[];
         return `Found ${Array.isArray(r) ? r.length : 0} agent(s)`;

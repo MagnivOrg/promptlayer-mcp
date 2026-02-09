@@ -121,11 +121,13 @@ export function registerTemplateHandlers(server: any) {
     createLabel.inputSchema.shape,
     createToolHandler(
       (client, args) => {
-        const { api_key: _, prompt_id, ...body } = args as {
+        const { api_key: _, prompt_id, prompt_version_number, name } = args as {
           prompt_id: number;
+          prompt_version_number: number;
+          name: string;
           api_key?: string;
-        } & Record<string, unknown>;
-        return client.createPromptLabel(prompt_id, body);
+        };
+        return client.createPromptLabel(prompt_id, { prompt_version_number, name });
       },
       () => "Prompt label created successfully"
     )
@@ -139,11 +141,12 @@ export function registerTemplateHandlers(server: any) {
     moveLabel.inputSchema.shape,
     createToolHandler(
       (client, args) => {
-        const { api_key: _, prompt_label_id, ...body } = args as {
+        const { api_key: _, prompt_label_id, prompt_version_number } = args as {
           prompt_label_id: number;
+          prompt_version_number: number;
           api_key?: string;
-        } & Record<string, unknown>;
-        return client.movePromptLabel(prompt_label_id, body);
+        };
+        return client.movePromptLabel(prompt_label_id, { prompt_version_number });
       },
       () => "Prompt label moved successfully"
     )
@@ -172,8 +175,11 @@ export function registerTemplateHandlers(server: any) {
     snippetUsage.inputSchema.shape,
     createToolHandler(
       (client, args) => {
-        const { identifier } = args as { identifier: string };
-        return client.getSnippetUsage(identifier);
+        const { api_key: _, identifier, ...params } = args as {
+          identifier: string;
+          api_key?: string;
+        } & Record<string, unknown>;
+        return client.getSnippetUsage(identifier, params);
       },
       (result) => {
         const r = result as unknown[];
