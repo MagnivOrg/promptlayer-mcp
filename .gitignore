@@ -8,3 +8,7 @@ dist/
 .cursor/
 
 ref-app/
+
+# Generated sync artifacts
+scripts/openapi-endpoints.json
+scripts/mcp-tools.json
