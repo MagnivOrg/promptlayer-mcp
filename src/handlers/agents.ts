@@ -4,31 +4,8 @@
  *            get-workflow-version-execution-results
  */
 
-import { PromptLayerClient } from "../client.js";
 import { TOOL_DEFINITIONS } from "../types.js";
-import {
-  getApiKey,
-  formatErrorResponse,
-  formatSuccessResponse,
-} from "../utils.js";
-
-type ToolHandlerArgs = Record<string, unknown> & { api_key?: string };
-
-function createToolHandler<TArgs extends ToolHandlerArgs>(
-  clientCall: (client: PromptLayerClient, args: TArgs) => Promise<unknown>,
-  formatMessage: (result: unknown) => string
-) {
-  return async (args: TArgs) => {
-    try {
-      const apiKey = getApiKey(args.api_key);
-      const client = new PromptLayerClient(apiKey);
-      const result = await clientCall(client, args);
-      return formatSuccessResponse(result, formatMessage(result));
-    } catch (error) {
-      return formatErrorResponse(error);
-    }
-  };
-}
+import { createToolHandler } from "../utils.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function registerAgentHandlers(server: any) {
@@ -98,9 +75,9 @@ export function registerAgentHandlers(server: any) {
         return client.runWorkflow(workflow_name, body);
       },
       (result) => {
-        const r = result as { execution_id?: string | number };
-        return r.execution_id
-          ? `Agent run started (execution ID: ${r.execution_id})`
+        const r = result as { workflow_version_execution_id?: number };
+        return r.workflow_version_execution_id
+          ? `Agent run started (execution ID: ${r.workflow_version_execution_id})`
           : "Agent run started";
       }
     )

@@ -4,31 +4,8 @@
  *            create-dataset-version-from-filter-params
  */
 
-import { PromptLayerClient } from "../client.js";
 import { TOOL_DEFINITIONS } from "../types.js";
-import {
-  getApiKey,
-  formatErrorResponse,
-  formatSuccessResponse,
-} from "../utils.js";
-
-type ToolHandlerArgs = Record<string, unknown> & { api_key?: string };
-
-function createToolHandler<TArgs extends ToolHandlerArgs>(
-  clientCall: (client: PromptLayerClient, args: TArgs) => Promise<unknown>,
-  formatMessage: (result: unknown) => string
-) {
-  return async (args: TArgs) => {
-    try {
-      const apiKey = getApiKey(args.api_key);
-      const client = new PromptLayerClient(apiKey);
-      const result = await clientCall(client, args);
-      return formatSuccessResponse(result, formatMessage(result));
-    } catch (error) {
-      return formatErrorResponse(error);
-    }
-  };
-}
+import { createToolHandler } from "../utils.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function registerDatasetHandlers(server: any) {
@@ -82,7 +59,6 @@ export function registerDatasetHandlers(server: any) {
           file_name: string;
           api_key?: string;
         };
-        // Build form data for file upload
         const blob = new Blob([file_content], { type: "application/octet-stream" });
         const formData = new FormData();
         formData.append("file", blob, file_name);
@@ -104,7 +80,7 @@ export function registerDatasetHandlers(server: any) {
         const { api_key: _, ...body } = args;
         return client.createDatasetVersionFromFilterParams(body);
       },
-      () => "Dataset version creation from filter params initiated (async)"
+      () => "Dataset version creation from request history initiated (async)"
     )
   );
 }

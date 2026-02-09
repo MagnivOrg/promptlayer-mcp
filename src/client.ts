@@ -18,7 +18,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export class PromptLayerClient {
-  private debugMode: boolean = true;
+  private debugMode: boolean =
+    process.env.PROMPTLAYER_DEBUG === "true" ||
+    process.env.PROMPTLAYER_DEBUG === "1";
   private debugPath: string = join(__dirname, "logs");
 
   constructor(

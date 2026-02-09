@@ -260,47 +260,48 @@ export const GetSnippetUsageArgsSchema = z.object({
 // ── Log Request (POST /log-request) ──────────────────────────────────────
 
 export const LogRequestArgsSchema = z.object({
-  function_name: z
+  provider: z
     .string()
-    .describe("The name of the LLM function called (e.g. 'openai.chat.completions.create')"),
-  provider_type: z
+    .describe("LLM provider name (e.g. 'openai', 'anthropic', 'google', 'cohere')"),
+  model: z
+    .string()
+    .describe("Model name (e.g. 'gpt-4o', 'claude-3-7-sonnet-20250219')"),
+  input: z
+    .record(z.unknown())
+    .describe("Input in Prompt Blueprint format. For chat: {type: 'chat', messages: [{role, content: [{type: 'text', text}]}]}"),
+  output: z
+    .record(z.unknown())
+    .describe("Output in Prompt Blueprint format. For chat: {type: 'chat', messages: [{role: 'assistant', content: [{type: 'text', text}]}]}"),
+  request_start_time: z
     .string()
     .optional()
-    .describe("Provider type (e.g. 'openai', 'anthropic')"),
-  args: z
-    .array(z.unknown())
+    .describe("ISO 8601 datetime when the request started (e.g. '2024-04-03T20:57:25+00:00')"),
+  request_end_time: z
+    .string()
     .optional()
-    .describe("Positional arguments passed to the function"),
-  kwargs: z
+    .describe("ISO 8601 datetime when the response was received"),
+  parameters: z
     .record(z.unknown())
     .optional()
-    .describe("Keyword arguments / parameters passed to the function (model, messages, temperature, etc.)"),
+    .describe("Model parameters (temperature, max_tokens, response_format, etc.)"),
   tags: z
     .array(z.string())
     .optional()
-    .describe("Tags to associate with the request"),
-  request_response: z
-    .record(z.unknown())
-    .optional()
-    .describe("The response from the LLM provider"),
-  request_start_time: z
-    .number()
-    .optional()
-    .describe("Unix timestamp when the request started"),
-  request_end_time: z
-    .number()
-    .optional()
-    .describe("Unix timestamp when the request ended"),
+    .describe("Tags for categorizing the request"),
   metadata: z
     .record(z.unknown())
     .optional()
-    .describe("Metadata dictionary to associate with the request"),
+    .describe("Custom key-value metadata for search and filtering"),
+  prompt_name: z
+    .string()
+    .optional()
+    .describe("Prompt template name to associate with this request"),
   prompt_id: z
     .number()
     .int()
     .optional()
-    .describe("Prompt template version ID to associate with this request"),
-  prompt_version: z
+    .describe("Prompt template ID to associate with this request"),
+  prompt_version_number: z
     .number()
     .int()
     .optional()
@@ -308,16 +309,21 @@ export const LogRequestArgsSchema = z.object({
   prompt_input_variables: z
     .record(z.unknown())
     .optional()
-    .describe("Input variables used with the prompt template"),
-  group_id: z
+    .describe("Variables used to format the prompt template"),
+  input_tokens: z
     .number()
     .int()
     .optional()
-    .describe("Group ID to associate with the request"),
-  return_pl_id: z
-    .boolean()
+    .describe("Number of input tokens used"),
+  output_tokens: z
+    .number()
+    .int()
     .optional()
-    .describe("If true, returns the PromptLayer request ID"),
+    .describe("Number of output tokens generated"),
+  api_type: z
+    .string()
+    .optional()
+    .describe("API type for openai/azure-openai (e.g. 'chat-completions', 'responses')"),
   api_key: z
     .string()
     .optional()
@@ -674,30 +680,39 @@ export const ListWorkflowsArgsSchema = z.object({
 // ── Create Agent (POST /rest/workflows) ──────────────────────────────────
 
 export const CreateWorkflowArgsSchema = z.object({
-  workflow_name: z
+  name: z
     .string()
     .optional()
-    .describe("Name for the agent (required for new agents)"),
+    .describe("Name for a new agent. Cannot be used with workflow_id or workflow_name."),
   workflow_id: z
     .number()
     .int()
     .optional()
-    .describe("ID of existing agent to create a new version for"),
+    .describe("ID of an existing agent to create a new version for"),
+  workflow_name: z
+    .string()
+    .optional()
+    .describe("Name of an existing agent to create a new version for"),
+  folder_id: z
+    .number()
+    .int()
+    .optional()
+    .describe("Folder ID to place the agent in"),
   commit_message: z
     .string()
     .optional()
-    .describe("Commit message for this version"),
+    .describe("Message describing the changes in this version"),
   nodes: z
     .array(z.record(z.unknown()))
-    .describe("Array of node configurations for the agent"),
+    .describe("Array of node objects. Each needs: name (string), node_type (string), configuration (object), is_output_node (boolean). Optional: dependencies (string[])."),
   required_input_variables: z
     .record(z.string())
     .optional()
-    .describe("Map of required input variable names to their types"),
+    .describe("Map of variable names to their types, e.g. {\"user_query\": \"string\"}"),
   edges: z
     .array(z.record(z.unknown()))
     .optional()
-    .describe("Array of edge configurations connecting nodes"),
+    .describe("Conditional connections between nodes. Each needs: source_node_name, target_node_name, is_and (boolean), conditionals (array)."),
   release_labels: z
     .array(z.string())
     .optional()
@@ -750,24 +765,32 @@ export const PatchWorkflowArgsSchema = z.object({
 export const RunWorkflowArgsSchema = z.object({
   workflow_name: z
     .string()
-    .describe("Name of the agent/workflow to run"),
+    .describe("Name of the agent to run (used as path parameter)"),
   input_variables: z
     .record(z.unknown())
     .optional()
-    .describe("Input variables to pass to the agent"),
-  version: z
+    .describe("Input variables for the agent execution"),
+  workflow_version_number: z
     .number()
     .int()
     .optional()
-    .describe("Specific version to run (defaults to latest)"),
-  label: z
+    .describe("Specific version number to run (defaults to latest)"),
+  workflow_label_name: z
     .string()
     .optional()
-    .describe("Release label to use (e.g. 'prod')"),
+    .describe("Release label name to run (e.g. 'prod')"),
   metadata: z
     .record(z.unknown())
     .optional()
-    .describe("Metadata to associate with the execution"),
+    .describe("Metadata key-value pairs to attach to the execution"),
+  return_all_outputs: z
+    .boolean()
+    .optional()
+    .describe("If true, return all node outputs. If false (default), return only final output."),
+  callback_url: z
+    .string()
+    .optional()
+    .describe("HTTP URL for async webhook. When set, returns 202 immediately and POSTs results to this URL on completion."),
   api_key: z
     .string()
     .optional()
@@ -1128,11 +1151,11 @@ export const TOOL_DEFINITIONS = {
     name: "get-prompt-template",
     title: "Get Prompt Template",
     description:
-      "Retrieve a prompt template from PromptLayer using either the prompt_name or prompt_id. " +
-      "Optionally, specify version (version number) or label (release label like 'prod') to retrieve a specific version. " +
-      "If not specified, the latest version is returned. PromptLayer will try to read the model provider from the parameters " +
-      "you attached to the prompt template. You can optionally pass in a provider to override the one set in the Prompt Registry. " +
-      "This will return LLM-specific arguments that can be passed directly into your LLM client. To format the template with input variables, use input_variables.",
+      "Retrieve a prompt template by name or ID, with optional version/label selection. " +
+      "Returns the template with provider-formatted llm_kwargs ready for your LLM client. " +
+      "Use input_variables to fill template placeholders. Use label (e.g. 'prod') or version number " +
+      "to pin a specific version; defaults to latest. " +
+      "Use get-prompt-template-raw instead if you need unformatted template data for caching or sync.",
     inputSchema: GetPromptTemplateArgsSchema,
     annotations: { readOnlyHint: true },
   },
@@ -1140,10 +1163,11 @@ export const TOOL_DEFINITIONS = {
     name: "get-prompt-template-raw",
     title: "Get Prompt Template (Raw)",
     description:
-      "Retrieve raw prompt template data without applying input variables. " +
-      "Designed for GitHub sync, local caching, and template inspection. " +
-      "By default, snippets are resolved (expanded). Use resolve_snippets=false to get the raw template with snippet references intact. " +
-      "Unlike the POST endpoint, this GET endpoint does not accept input_variables or provider.",
+      "Retrieve raw prompt template data without applying input variables or provider formatting. " +
+      "Ideal for GitHub sync, local caching, and template inspection. " +
+      "Set resolve_snippets=false to preserve raw @@@snippet@@@ references. " +
+      "Set include_llm_kwargs=true to include provider-specific format. " +
+      "Use get-prompt-template instead if you need formatted output with filled variables.",
     inputSchema: GetPromptTemplateRawArgsSchema,
     annotations: { readOnlyHint: true },
   },
@@ -1151,9 +1175,8 @@ export const TOOL_DEFINITIONS = {
     name: "list-prompt-templates",
     title: "List Prompt Templates",
     description:
-      "Get a paginated list of all prompt templates in your workspace. Supports filtering by release label, " +
-      "name (case-insensitive partial match), and status (active/deleted/all). Returns pagination information " +
-      "including page numbers, total count, and navigation flags.",
+      "List all prompt templates in the workspace with pagination. " +
+      "Filter by name (partial match), release label, or status (active/deleted/all).",
     inputSchema: ListPromptTemplatesArgsSchema,
     annotations: { readOnlyHint: true },
   },
@@ -1161,9 +1184,10 @@ export const TOOL_DEFINITIONS = {
     name: "publish-prompt-template",
     title: "Publish Prompt Template",
     description:
-      "Publish a new version of a prompt template programmatically. " +
-      "Create or update prompt templates with chat or completion format, " +
-      "commit messages, tags, metadata, and release labels.",
+      "Create a new version of a prompt template. If the prompt_name doesn't exist, creates it. " +
+      "The prompt_template object must be in chat format ({type:'chat', messages:[...]}) " +
+      "or completion format ({type:'completion', content:[...]}). " +
+      "Optionally assign release labels, tags, and metadata with model configuration.",
     inputSchema: PublishPromptTemplateArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -1171,8 +1195,7 @@ export const TOOL_DEFINITIONS = {
     name: "list-prompt-template-labels",
     title: "List Prompt Template Labels",
     description:
-      "Retrieve all release labels assigned to a prompt template. " +
-      "Identifiers can be either prompt_name or prompt_id.",
+      "List all release labels (e.g. 'prod', 'staging') assigned to a prompt template.",
     inputSchema: ListPromptTemplateLabelsArgsSchema,
     annotations: { readOnlyHint: true },
   },
@@ -1180,8 +1203,9 @@ export const TOOL_DEFINITIONS = {
     name: "create-prompt-label",
     title: "Create Prompt Template Label",
     description:
-      "Create a release label for a prompt template version. " +
-      "Labels like 'prod', 'staging', 'dev' help manage deployment of different prompt versions.",
+      "Attach a release label to a prompt template version. " +
+      "Use labels like 'prod', 'staging', 'dev' to manage deployment of prompt versions. " +
+      "Requires the prompt version ID (from get-prompt-template or list-prompt-templates).",
     inputSchema: CreatePromptLabelArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -1189,15 +1213,18 @@ export const TOOL_DEFINITIONS = {
     name: "move-prompt-label",
     title: "Move Prompt Template Label",
     description:
-      "Move a release label from one prompt template version to another. " +
-      "This is useful for promoting a new version to 'prod' without deleting and recreating labels.",
+      "Move a release label from one prompt version to another. " +
+      "Use this to promote a new version to 'prod' without deleting and recreating the label. " +
+      "Requires the prompt_label_id (from list-prompt-template-labels).",
     inputSchema: MovePromptLabelArgsSchema,
     annotations: { readOnlyHint: false },
   },
   "delete-prompt-label": {
     name: "delete-prompt-label",
     title: "Delete Prompt Template Label",
-    description: "Delete a release label from a prompt template version.",
+    description:
+      "Delete a release label from a prompt template version. " +
+      "Requires prompt_label_id (from list-prompt-template-labels).",
     inputSchema: DeletePromptLabelArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -1205,9 +1232,8 @@ export const TOOL_DEFINITIONS = {
     name: "get-snippet-usage",
     title: "Get Snippet Usage",
     description:
-      "Get all prompts that use a given snippet (prompt template). " +
-      "Returns a list of prompts and their version numbers that reference this snippet, " +
-      "as well as any release labels that reference it.",
+      "Find all prompts that reference a given snippet (prompt template used as @@@snippet@@@). " +
+      "Returns prompt names, version numbers, and release labels that use the snippet.",
     inputSchema: GetSnippetUsageArgsSchema,
     annotations: { readOnlyHint: true },
   },
@@ -1217,8 +1243,10 @@ export const TOOL_DEFINITIONS = {
     name: "log-request",
     title: "Log Request",
     description:
-      "Log a request to PromptLayer. This is useful for logging requests from custom LLM providers. " +
-      "Supports structured outputs, tool/function definitions, and all standard LLM request metadata.",
+      "Log an LLM request/response pair to PromptLayer. Use for custom provider integrations " +
+      "or when not using PromptLayer's proxied clients. Input and output must be in Prompt Blueprint " +
+      "format: {type:'chat', messages:[{role, content:[{type:'text', text}]}]}. " +
+      "Supports structured outputs, tool calls, and extended thinking.",
     inputSchema: LogRequestArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -1226,8 +1254,8 @@ export const TOOL_DEFINITIONS = {
     name: "track-prompt",
     title: "Track Prompt",
     description:
-      "Associate a prompt template with a previously logged request. " +
-      "Links the request to a specific prompt in the registry for tracking usage, latency, and cost.",
+      "Associate a prompt template with a previously logged request (by request_id). " +
+      "Links the request to a prompt in the registry for usage, latency, and cost tracking.",
     inputSchema: TrackPromptArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -1235,8 +1263,8 @@ export const TOOL_DEFINITIONS = {
     name: "track-score",
     title: "Track Score",
     description:
-      "Associate a score (0-100) with a request. " +
-      "Supports multiple named scores per request via score_name parameter.",
+      "Assign a score (0-100) to a logged request. Use score_name to store multiple " +
+      "named scores per request (e.g. 'relevance', 'accuracy').",
     inputSchema: TrackScoreArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -1244,8 +1272,9 @@ export const TOOL_DEFINITIONS = {
     name: "track-metadata",
     title: "Track Metadata",
     description:
-      "Associate a metadata dictionary with a request. " +
-      "Useful for tracking session_ids, user_ids, location, and other contextual information.",
+      "Attach metadata key-value pairs to a logged request. " +
+      "Common uses: session_id, user_id, environment, experiment_id. " +
+      "Metadata is searchable and filterable in the PromptLayer dashboard.",
     inputSchema: TrackMetadataArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -1253,7 +1282,8 @@ export const TOOL_DEFINITIONS = {
     name: "track-group",
     title: "Track Group",
     description:
-      "Associate a group with a request. Groups help organize related requests together.",
+      "Associate a logged request with a group for organizing related requests together " +
+      "(e.g. multi-turn conversations, pipeline steps).",
     inputSchema: TrackGroupArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -1261,8 +1291,9 @@ export const TOOL_DEFINITIONS = {
     name: "create-spans-bulk",
     title: "Create Spans Bulk",
     description:
-      "Create multiple spans in bulk for distributed tracing. " +
-      "Each span describes an operation within a trace.",
+      "Create multiple OpenTelemetry-compatible spans in bulk for distributed tracing. " +
+      "Each span has context (trace_id, span_id), timing, status, attributes, and optional log_request data. " +
+      "Use to instrument multi-step LLM pipelines.",
     inputSchema: CreateSpansBulkArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -1272,8 +1303,8 @@ export const TOOL_DEFINITIONS = {
     name: "list-datasets",
     title: "List Datasets",
     description:
-      "Retrieve a paginated list of datasets. Supports filtering by name, status, " +
-      "dataset group, prompt, report, and workspace.",
+      "List datasets with pagination. Filter by name (partial match), status, " +
+      "dataset_group_id, prompt_id, or report_id.",
     inputSchema: ListDatasetsArgsSchema,
     annotations: { readOnlyHint: true },
   },
@@ -1281,9 +1312,9 @@ export const TOOL_DEFINITIONS = {
     name: "create-dataset-group",
     title: "Create Dataset Group",
     description:
-      "Create a new dataset group within a workspace. " +
-      "An initial draft dataset (version_number = -1) is automatically created. " +
-      "Dataset group names must be unique within a workspace.",
+      "Create a new dataset group (container for dataset versions). " +
+      "An initial empty draft version (version_number=-1) is created automatically. " +
+      "Names must be unique within the workspace.",
     inputSchema: CreateDatasetGroupArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -1291,17 +1322,18 @@ export const TOOL_DEFINITIONS = {
     name: "create-dataset-version-from-file",
     title: "Create Dataset Version from File",
     description:
-      "Create a new dataset version by uploading CSV or JSON file content. " +
-      "The file is processed asynchronously. Maximum file size: 100MB.",
+      "Upload CSV or JSON content to create a new dataset version. " +
+      "Processed asynchronously (webhooks fire on completion). Max 100MB. " +
+      "Requires an existing dataset_group_id (from create-dataset-group or list-datasets).",
     inputSchema: CreateDatasetVersionFromFileArgsSchema,
     annotations: { readOnlyHint: false },
   },
   "create-dataset-version-from-filter-params": {
     name: "create-dataset-version-from-filter-params",
-    title: "Create Dataset Version from Filter Params",
+    title: "Create Dataset Version from Request History",
     description:
-      "Create a new dataset version by filtering existing request logs. " +
-      "The dataset is populated asynchronously based on the provided filter parameters.",
+      "Create a dataset version by filtering existing PromptLayer request logs. " +
+      "Populated asynchronously. Use to build eval datasets from production traffic.",
     inputSchema: CreateDatasetVersionFromFilterParamsArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -1311,8 +1343,7 @@ export const TOOL_DEFINITIONS = {
     name: "list-evaluations",
     title: "List Evaluations",
     description:
-      "Retrieve a paginated list of evaluations in your workspace. " +
-      "Supports filtering by name and status (active/deleted/all).",
+      "List evaluation pipelines with pagination. Filter by name (partial match) and status.",
     inputSchema: ListEvaluationsArgsSchema,
     annotations: { readOnlyHint: true },
   },
@@ -1320,8 +1351,9 @@ export const TOOL_DEFINITIONS = {
     name: "create-report",
     title: "Create Evaluation Pipeline",
     description:
-      "Create a new evaluation pipeline (report) associated with a dataset. " +
-      "Supports optional evaluation columns and custom scoring configuration.",
+      "Create a new evaluation pipeline linked to a dataset group. " +
+      "Optionally include columns (evaluation steps) and scoring configuration upfront. " +
+      "Columns can also be added later with add-report-column.",
     inputSchema: CreateReportArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -1329,7 +1361,8 @@ export const TOOL_DEFINITIONS = {
     name: "run-report",
     title: "Run Evaluation",
     description:
-      "Run an evaluation pipeline. Executes all columns in the pipeline against the dataset.",
+      "Execute an evaluation pipeline against its dataset. " +
+      "Runs all columns sequentially left-to-right. Optionally override the dataset_id.",
     inputSchema: RunReportArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -1337,15 +1370,15 @@ export const TOOL_DEFINITIONS = {
     name: "get-report",
     title: "Get Evaluation",
     description:
-      "Retrieve information about an evaluation pipeline by its report ID.",
+      "Get evaluation pipeline details by report_id. " +
+      "Use get-report-score instead to retrieve the computed score.",
     inputSchema: GetReportArgsSchema,
     annotations: { readOnlyHint: true },
   },
   "get-report-score": {
     name: "get-report-score",
     title: "Get Evaluation Score",
-    description:
-      "Retrieve the score of a specific evaluation pipeline by its report ID.",
+    description: "Get the computed score for an evaluation pipeline by report_id.",
     inputSchema: GetReportScoreArgsSchema,
     annotations: { readOnlyHint: true },
   },
@@ -1353,9 +1386,11 @@ export const TOOL_DEFINITIONS = {
     name: "add-report-column",
     title: "Add Column to Evaluation Pipeline",
     description:
-      "Add a new evaluation step (column) to an existing evaluation pipeline. " +
-      "Columns execute sequentially from left to right. Supports many column types " +
-      "including PROMPT_TEMPLATE, CODE_EXECUTION, LLM_ASSERTION, and more.",
+      "Add one evaluation step (column) to a pipeline. Only one column per request. " +
+      "Columns run left-to-right and can reference previous columns. " +
+      "Primary types: PROMPT_TEMPLATE, CODE_EXECUTION, ENDPOINT, WORKFLOW, MCP, HUMAN. " +
+      "Eval types: LLM_ASSERTION, COMPARE, CONTAINS, REGEX, COSINE_SIMILARITY. " +
+      "Helper types: JSON_PATH, VARIABLE, COALESCE, COMBINE_COLUMNS, MATH_OPERATOR.",
     inputSchema: AddReportColumnArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -1363,16 +1398,16 @@ export const TOOL_DEFINITIONS = {
     name: "update-report-score-card",
     title: "Configure Custom Scoring",
     description:
-      "Configure custom scoring logic for an evaluation pipeline. " +
-      "Specify which columns to include in score calculation and optionally provide custom code.",
+      "Set custom scoring logic for an evaluation pipeline. " +
+      "Specify column_names to include in the score. Optionally provide custom Python or JavaScript " +
+      "code that receives a 'data' list of row dicts and must return {score: 0-100}.",
     inputSchema: UpdateReportScoreCardArgsSchema,
     annotations: { readOnlyHint: false },
   },
   "delete-reports-by-name": {
     name: "delete-reports-by-name",
     title: "Delete Reports by Name",
-    description:
-      "Archive all reports with the specified name within the workspace.",
+    description: "Archive all evaluation pipelines (reports) with the given name in the workspace.",
     inputSchema: DeleteReportsByNameArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -1381,7 +1416,7 @@ export const TOOL_DEFINITIONS = {
   "list-workflows": {
     name: "list-workflows",
     title: "List Agents",
-    description: "Get a list of all agents (workflows) in the system.",
+    description: "List all agents (formerly called workflows) in the workspace.",
     inputSchema: ListWorkflowsArgsSchema,
     annotations: { readOnlyHint: true },
   },
@@ -1389,8 +1424,10 @@ export const TOOL_DEFINITIONS = {
     name: "create-workflow",
     title: "Create Agent",
     description:
-      "Create a new agent or a new version of an existing agent programmatically. " +
-      "Define nodes, edges, input variables, and release labels.",
+      "Create a new agent or a new version of an existing agent. " +
+      "For new agents, provide 'name'. For new versions, provide workflow_id or workflow_name. " +
+      "Each node needs: name, node_type, configuration, is_output_node (at least one must be true). " +
+      "Use edges for conditional branching between nodes.",
     inputSchema: CreateWorkflowArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -1398,9 +1435,9 @@ export const TOOL_DEFINITIONS = {
     name: "patch-workflow",
     title: "Update Agent (PATCH)",
     description:
-      "Partially update an agent by creating a new version with merged changes. " +
-      "Modify specific nodes without resending the entire configuration. " +
-      "Set a node to null to remove it.",
+      "Partially update an agent by merging node changes into a new version. " +
+      "Only send the nodes you want to change. Set a node value to null to remove it. " +
+      "Fetches base_version (or latest) and merges your updates.",
     inputSchema: PatchWorkflowArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -1408,17 +1445,18 @@ export const TOOL_DEFINITIONS = {
     name: "run-workflow",
     title: "Run Agent",
     description:
-      "Run an agent/workflow by name. Pass input variables and optionally specify a version or release label.",
+      "Execute an agent by name. Pass input_variables and optionally pin a version or label. " +
+      "Returns 201 with results, or 202 if callback_url is provided (async webhook). " +
+      "Set return_all_outputs=true to get all node outputs instead of just the final one.",
     inputSchema: RunWorkflowArgsSchema,
     annotations: { readOnlyHint: false },
   },
   "get-workflow-version-execution-results": {
     name: "get-workflow-version-execution-results",
-    title: "Get Agent Version Execution Results",
+    title: "Get Agent Execution Results",
     description:
-      "Retrieve the execution results of a specific agent version. " +
-      "Returns 200 when finished, 202 when still running. " +
-      "Set return_all_outputs=true to include all output nodes.",
+      "Poll for agent execution results. Returns 200 when complete, 202 when still running. " +
+      "Set return_all_outputs=true to include all node outputs with status, value, and errors.",
     inputSchema: GetWorkflowVersionExecutionResultsArgsSchema,
     annotations: { readOnlyHint: true },
   },
@@ -1428,8 +1466,8 @@ export const TOOL_DEFINITIONS = {
     name: "create-folder",
     title: "Create Folder",
     description:
-      "Create a new folder in the workspace. Folders can be nested within other folders " +
-      "by providing a parent_id. Folder names must be unique within their parent.",
+      "Create a folder for organizing prompt templates and other resources. " +
+      "Nest folders by setting parent_id. Names must be unique within their parent.",
     inputSchema: CreateFolderArgsSchema,
     annotations: { readOnlyHint: false },
   },
