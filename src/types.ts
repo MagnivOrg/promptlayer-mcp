@@ -136,6 +136,10 @@ export const GetSnippetUsageArgsSchema = z.object({
 
 
 // ── Log Request (POST /log-request) ──────────────────────────────────────
+// NOTE: OpenAPI defines input/output as oneOf(ChatPrompt, CompletionPrompt).
+// We use z.record(z.unknown()) because the MCP tool passes them through as-is;
+// the PromptLayer server validates the discriminated union, not us.
+// This is tracked as a known exception in scripts/diff-endpoints.ts.
 
 export const LogRequestArgsSchema = z.object({
   provider: z.string().describe("LLM provider (e.g. 'openai', 'anthropic')"),
@@ -328,7 +332,9 @@ export const AddReportColumnArgsSchema = z.object({
 });
 
 // ── Configure Custom Scoring (PATCH /reports/{report_id}/score-card) ─────
-// Note: This endpoint is documented in reference text but not in the OpenAPI spec.
+// NOTE: This endpoint is in the PromptLayer reference docs but NOT in the
+// OpenAPI spec. Tracked as a known exception in scripts/diff-endpoints.ts.
+// See: https://docs.promptlayer.com/reference/update-report-score-card
 
 export const UpdateReportScoreCardArgsSchema = z.object({
   report_id: z.number().int().describe("Evaluation pipeline ID"),
@@ -391,6 +397,8 @@ export const RunWorkflowArgsSchema = z.object({
   workflow_label_name: z.string().optional().describe("Release label to run (e.g. 'prod')"),
   metadata: z.record(z.unknown()).optional().describe("Metadata to attach to the execution"),
   return_all_outputs: z.boolean().optional().describe("Return all node outputs (default: false, returns only final output)"),
+  // NOTE: callback_url is in the reference docs but not the OpenAPI spec.
+  // Tracked as a known exception in scripts/diff-endpoints.ts.
   callback_url: z.string().optional().describe("Webhook URL for async results. Returns 202 immediately, POSTs results on completion."),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });

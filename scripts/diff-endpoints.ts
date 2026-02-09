@@ -4,13 +4,37 @@
  *
  * Usage: npx tsx scripts/diff-endpoints.ts
  *
- * Exit code 0 = in sync, 1 = differences found.
+ * Exit code 0 = in sync (or all issues are known exceptions), 1 = new issues found.
  */
 
 import { readFileSync } from "fs";
 
 const OPENAPI_PATH = new URL("./openapi-endpoints.json", import.meta.url).pathname;
 const MCP_PATH = new URL("./mcp-tools.json", import.meta.url).pathname;
+
+// ─── Known exceptions ────────────────────────────────────────────────────────
+// Each string is matched exactly against an issue line. When ALL remaining
+// issues are in this list, the script exits 0 (pass). Add a comment for each
+// explaining WHY it's expected so a future reader/agent understands.
+const KNOWN_EXCEPTIONS: string[] = [
+  // update-report-score-card is documented in the PromptLayer reference text
+  // (https://docs.promptlayer.com/reference/update-report-score-card) but the
+  // endpoint is not present in the OpenAPI spec (openapi.json). We implement
+  // it because users need it; it will resolve when PromptLayer adds it to the spec.
+  "EXTRA IN MCP (not in OpenAPI): PATCH /reports/{report_id}/score-card (tool: update-report-score-card)",
+
+  // callback_url is documented in the run-workflow reference text
+  // (https://docs.promptlayer.com/reference/run-workflow) under Request Body
+  // but is not yet in the OpenAPI spec. We include it for async webhook support.
+  'EXTRA FIELD: POST /workflows/{workflow_name}/run > "callback_url" not in OpenAPI [tool: run-workflow]',
+
+  // The OpenAPI spec defines input/output as oneOf (ChatPrompt | CompletionPrompt).
+  // We type them as plain object (z.record) because the MCP tool passes them through
+  // as-is to the API — the server validates the discriminated union, not us.
+  'TYPE MISMATCH: POST /log-request > "input": MCP=object, OpenAPI=oneOf [tool: log-request]',
+  'TYPE MISMATCH: POST /log-request > "output": MCP=object, OpenAPI=oneOf [tool: log-request]',
+];
+// ─────────────────────────────────────────────────────────────────────────────
 
 type OpenAPIEndpoint = {
   method: string;
@@ -38,36 +62,33 @@ function main() {
   const openapi: OpenAPIEndpoint[] = JSON.parse(readFileSync(OPENAPI_PATH, "utf-8"));
   const mcp: MCPTool[] = JSON.parse(readFileSync(MCP_PATH, "utf-8"));
 
-  const issues: string[] = [];
+  const allIssues: string[] = [];
 
-  // Build lookup of OpenAPI endpoints
   const openapiMap = new Map<string, OpenAPIEndpoint>();
   for (const ep of openapi) openapiMap.set(endpointKey(ep.method, ep.path), ep);
 
-  // Build lookup of MCP tools by endpoint
   const mcpMap = new Map<string, MCPTool>();
   for (const tool of mcp) mcpMap.set(endpointKey(tool.method, tool.path), tool);
 
   // 1. Endpoints in OpenAPI but missing from MCP
   for (const [key, ep] of openapiMap) {
     if (!mcpMap.has(key)) {
-      issues.push(`MISSING IN MCP: ${key} (${ep.summary})`);
+      allIssues.push(`MISSING IN MCP: ${key} (${ep.summary})`);
     }
   }
 
-  // 2. Endpoints in MCP but not in OpenAPI (possibly docs-only endpoints)
+  // 2. Endpoints in MCP but not in OpenAPI
   for (const [key, tool] of mcpMap) {
     if (!openapiMap.has(key)) {
-      issues.push(`EXTRA IN MCP (not in OpenAPI): ${key} (tool: ${tool.toolName})`);
+      allIssues.push(`EXTRA IN MCP (not in OpenAPI): ${key} (tool: ${tool.toolName})`);
     }
   }
 
-  // 3. For matching endpoints, compare fields
+  // 3. Field-level comparison for matching endpoints
   for (const [key, tool] of mcpMap) {
     const ep = openapiMap.get(key);
     if (!ep) continue;
 
-    // Collect all OpenAPI fields (path params excluded since MCP handles them as regular fields)
     const openapiFields = new Map<string, { type: string; required: boolean; enum?: string[] }>();
     for (const p of ep.pathParams) openapiFields.set(p.name, p);
     for (const p of ep.queryParams) openapiFields.set(p.name, { type: p.type, required: p.required, ...(p.enum ? { enum: p.enum } : {}) });
@@ -76,57 +97,80 @@ function main() {
     const mcpFields = new Map<string, { type: string; required: boolean; enum?: string[] }>();
     for (const f of tool.fields) mcpFields.set(f.name, f);
 
-    // Fields in OpenAPI but missing from MCP
     for (const [name, spec] of openapiFields) {
       if (!mcpFields.has(name)) {
-        issues.push(`MISSING FIELD: ${key} > "${name}" (${spec.type}, ${spec.required ? "required" : "optional"}) [tool: ${tool.toolName}]`);
+        allIssues.push(`MISSING FIELD: ${key} > "${name}" (${spec.type}, ${spec.required ? "required" : "optional"}) [tool: ${tool.toolName}]`);
       }
     }
 
-    // Fields in MCP but not in OpenAPI
     for (const [name] of mcpFields) {
       if (!openapiFields.has(name)) {
-        issues.push(`EXTRA FIELD: ${key} > "${name}" not in OpenAPI [tool: ${tool.toolName}]`);
+        allIssues.push(`EXTRA FIELD: ${key} > "${name}" not in OpenAPI [tool: ${tool.toolName}]`);
       }
     }
 
-    // Type/required mismatches
     for (const [name, mcpField] of mcpFields) {
       const oaField = openapiFields.get(name);
       if (!oaField) continue;
 
       if (mcpField.required !== oaField.required) {
-        issues.push(`REQUIRED MISMATCH: ${key} > "${name}": MCP=${mcpField.required}, OpenAPI=${oaField.required} [tool: ${tool.toolName}]`);
+        allIssues.push(`REQUIRED MISMATCH: ${key} > "${name}": MCP=${mcpField.required}, OpenAPI=${oaField.required} [tool: ${tool.toolName}]`);
       }
 
-      // Type comparison: normalize for common differences
       const mcpType = mcpField.type.replace("number", "integer");
       const oaType = oaField.type.replace("number", "integer");
       if (mcpType !== oaType && oaType !== "unknown") {
-        issues.push(`TYPE MISMATCH: ${key} > "${name}": MCP=${mcpField.type}, OpenAPI=${oaField.type} [tool: ${tool.toolName}]`);
+        allIssues.push(`TYPE MISMATCH: ${key} > "${name}": MCP=${mcpField.type}, OpenAPI=${oaField.type} [tool: ${tool.toolName}]`);
       }
     }
   }
 
+  // Partition into known vs new
+  const knownSet = new Set(KNOWN_EXCEPTIONS);
+  const knownIssues = allIssues.filter((i) => knownSet.has(i));
+  const newIssues = allIssues.filter((i) => !knownSet.has(i));
+
   // Report
-  if (issues.length === 0) {
-    console.log("All MCP tools are in sync with the OpenAPI spec.");
+  if (allIssues.length === 0) {
+    console.log("PASS: All MCP tools are in sync with the OpenAPI spec. No issues.");
     process.exit(0);
   }
 
-  console.log(`Found ${issues.length} issue(s):\n`);
+  if (knownIssues.length > 0) {
+    console.log(`Known exceptions (${knownIssues.length}):`);
+    knownIssues.forEach((i) => console.log(`  [OK] ${i}`));
+    console.log();
+  }
 
-  const missing = issues.filter((i) => i.startsWith("MISSING IN MCP"));
-  const extra = issues.filter((i) => i.startsWith("EXTRA IN MCP"));
-  const missingFields = issues.filter((i) => i.startsWith("MISSING FIELD"));
-  const extraFields = issues.filter((i) => i.startsWith("EXTRA FIELD"));
-  const typeMismatches = issues.filter((i) => i.startsWith("TYPE MISMATCH") || i.startsWith("REQUIRED MISMATCH"));
+  if (newIssues.length === 0) {
+    console.log(`PASS: ${knownIssues.length} known exception(s), 0 new issues.`);
+    process.exit(0);
+  }
 
-  if (missing.length) { console.log("--- Missing Endpoints ---"); missing.forEach((i) => console.log(`  ${i}`)); console.log(); }
-  if (extra.length) { console.log("--- Extra Endpoints (not in OpenAPI) ---"); extra.forEach((i) => console.log(`  ${i}`)); console.log(); }
-  if (missingFields.length) { console.log("--- Missing Fields ---"); missingFields.forEach((i) => console.log(`  ${i}`)); console.log(); }
-  if (extraFields.length) { console.log("--- Extra Fields ---"); extraFields.forEach((i) => console.log(`  ${i}`)); console.log(); }
-  if (typeMismatches.length) { console.log("--- Type/Required Mismatches ---"); typeMismatches.forEach((i) => console.log(`  ${i}`)); console.log(); }
+  console.log(`FAIL: ${newIssues.length} new issue(s) found:\n`);
+
+  const buckets: Record<string, string[]> = {
+    "Missing Endpoints": [],
+    "Extra Endpoints": [],
+    "Missing Fields": [],
+    "Extra Fields": [],
+    "Type/Required Mismatches": [],
+  };
+
+  for (const i of newIssues) {
+    if (i.startsWith("MISSING IN MCP")) buckets["Missing Endpoints"].push(i);
+    else if (i.startsWith("EXTRA IN MCP")) buckets["Extra Endpoints"].push(i);
+    else if (i.startsWith("MISSING FIELD")) buckets["Missing Fields"].push(i);
+    else if (i.startsWith("EXTRA FIELD")) buckets["Extra Fields"].push(i);
+    else buckets["Type/Required Mismatches"].push(i);
+  }
+
+  for (const [label, items] of Object.entries(buckets)) {
+    if (items.length === 0) continue;
+    console.log(`--- ${label} ---`);
+    items.forEach((i) => console.log(`  ${i}`));
+    console.log();
+  }
 
   process.exit(1);
 }
