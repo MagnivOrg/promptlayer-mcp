@@ -1,9 +1,4 @@
-import {
-  GetPromptTemplateParams,
-  GetPromptTemplateResponse,
-  ListPromptTemplatesParams,
-  ListPromptTemplatesResponse,
-} from "./types.js";
+import type { GetPromptTemplateParams, ListPromptTemplatesParams } from "./types.js";
 import { buildQueryParams, handleApiError } from "./utils.js";
 
 type Body = Record<string, unknown>;
@@ -49,10 +44,10 @@ export class PromptLayerClient {
 
   // Prompt Templates
   getPromptTemplate(name: string, params?: GetPromptTemplateParams) {
-    return this.post<GetPromptTemplateResponse>(`/prompt-templates/${this.enc(name)}`, { api_key: this.apiKey, ...params });
+    return this.post(`/prompt-templates/${this.enc(name)}`, { api_key: this.apiKey, ...params });
   }
   getPromptTemplateRaw(id: string, params?: Body) { return this.get(`/prompt-templates/${this.enc(id)}`, params); }
-  listPromptTemplates(params?: ListPromptTemplatesParams) { return this.get<ListPromptTemplatesResponse>("/prompt-templates", params); }
+  listPromptTemplates(params?: ListPromptTemplatesParams) { return this.get("/prompt-templates", params); }
   publishPromptTemplate(body: Body) { return this.post("/rest/prompt-templates", body); }
   listPromptTemplateLabels(id: string) { return this.get(`/prompt-templates/${this.enc(id)}/labels`); }
   createPromptLabel(promptId: number, body: Body) { return this.post(`/prompts/${promptId}/label`, body); }
