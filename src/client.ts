@@ -1,8 +1,3 @@
-/**
- * PromptLayer API Client
- * Makes direct REST API calls to PromptLayer
- */
-
 import {
   GetPromptTemplateParams,
   GetPromptTemplateResponse,
@@ -11,276 +6,91 @@ import {
 } from "./types.js";
 import { buildQueryParams, handleApiError } from "./utils.js";
 
+type Body = Record<string, unknown>;
+
 export class PromptLayerClient {
   constructor(
     private apiKey: string,
     private baseUrl: string = "https://api.promptlayer.com"
   ) {}
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      "X-API-KEY": this.apiKey,
-      ...(options.headers as Record<string, string> | undefined),
-    };
-
-    const response = await fetch(url, {
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
       ...options,
-      headers,
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-KEY": this.apiKey,
+        ...(options.headers as Record<string, string> | undefined),
+      },
     });
-
-    if (!response.ok) {
-      throw await handleApiError(response);
-    }
-
+    if (!response.ok) throw await handleApiError(response);
     return (await response.json()) as T;
   }
 
-  // ── Prompt Templates ──────────────────────────────────────────────────
-
-  async getPromptTemplate(
-    promptName: string,
-    params?: GetPromptTemplateParams
-  ): Promise<GetPromptTemplateResponse> {
-    return this.request<GetPromptTemplateResponse>(
-      `/prompt-templates/${encodeURIComponent(promptName)}`,
-      {
-        method: "POST",
-        body: JSON.stringify({ api_key: this.apiKey, ...params }),
-      }
-    );
+  private get<T = unknown>(path: string, params?: Body): Promise<T> {
+    return this.request<T>(`${path}${buildQueryParams(params)}`, { method: "GET" });
   }
 
-  async getPromptTemplateRaw(
-    identifier: string,
-    params?: Record<string, unknown>
-  ): Promise<unknown> {
-    return this.request<unknown>(
-      `/prompt-templates/${encodeURIComponent(identifier)}${buildQueryParams(params)}`,
-      { method: "GET" }
-    );
+  private post<T = unknown>(path: string, body?: Body): Promise<T> {
+    return this.request<T>(path, { method: "POST", body: JSON.stringify(body) });
   }
 
-  async listPromptTemplates(
-    params?: ListPromptTemplatesParams
-  ): Promise<ListPromptTemplatesResponse> {
-    return this.request<ListPromptTemplatesResponse>(
-      `/prompt-templates${buildQueryParams(params)}`,
-      { method: "GET" }
-    );
+  private patch<T = unknown>(path: string, body?: Body): Promise<T> {
+    return this.request<T>(path, { method: "PATCH", body: JSON.stringify(body) });
   }
 
-  async publishPromptTemplate(body: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>("/rest/prompt-templates", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
+  private del<T = unknown>(path: string): Promise<T> {
+    return this.request<T>(path, { method: "DELETE" });
   }
 
-  async listPromptTemplateLabels(identifier: string): Promise<unknown> {
-    return this.request<unknown>(
-      `/prompt-templates/${encodeURIComponent(identifier)}/labels`,
-      { method: "GET" }
-    );
+  private enc(s: string): string {
+    return encodeURIComponent(s);
   }
 
-  async createPromptLabel(promptId: number, body: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>(`/prompts/${promptId}/label`, {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
+  // Prompt Templates
+  getPromptTemplate(name: string, params?: GetPromptTemplateParams) {
+    return this.post<GetPromptTemplateResponse>(`/prompt-templates/${this.enc(name)}`, { api_key: this.apiKey, ...params });
   }
+  getPromptTemplateRaw(id: string, params?: Body) { return this.get(`/prompt-templates/${this.enc(id)}`, params); }
+  listPromptTemplates(params?: ListPromptTemplatesParams) { return this.get<ListPromptTemplatesResponse>("/prompt-templates", params); }
+  publishPromptTemplate(body: Body) { return this.post("/rest/prompt-templates", body); }
+  listPromptTemplateLabels(id: string) { return this.get(`/prompt-templates/${this.enc(id)}/labels`); }
+  createPromptLabel(promptId: number, body: Body) { return this.post(`/prompts/${promptId}/label`, body); }
+  movePromptLabel(labelId: number, body: Body) { return this.patch(`/prompt-labels/${labelId}`, body); }
+  deletePromptLabel(labelId: number) { return this.del(`/prompt-labels/${labelId}`); }
+  getSnippetUsage(id: string, params?: Body) { return this.get(`/prompt-templates/${this.enc(id)}/snippet-usage`, params); }
 
-  async movePromptLabel(promptLabelId: number, body: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>(`/prompt-labels/${promptLabelId}`, {
-      method: "PATCH",
-      body: JSON.stringify(body),
-    });
-  }
+  // Tracking
+  logRequest(body: Body) { return this.post("/log-request", body); }
+  trackPrompt(body: Body) { return this.post("/rest/track-prompt", body); }
+  trackScore(body: Body) { return this.post("/rest/track-score", body); }
+  trackMetadata(body: Body) { return this.post("/rest/track-metadata", body); }
+  trackGroup(body: Body) { return this.post("/rest/track-group", body); }
+  createSpansBulk(body: Body) { return this.post("/spans-bulk", body); }
 
-  async deletePromptLabel(promptLabelId: number): Promise<unknown> {
-    return this.request<unknown>(`/prompt-labels/${promptLabelId}`, {
-      method: "DELETE",
-    });
-  }
+  // Datasets
+  listDatasets(params?: Body) { return this.get("/api/public/v2/datasets", params); }
+  createDatasetGroup(body: Body) { return this.post("/api/public/v2/dataset-groups", body); }
+  createDatasetVersionFromFile(body: Body) { return this.post("/api/public/v2/dataset-versions/from-file", body); }
+  createDatasetVersionFromFilterParams(body: Body) { return this.post("/api/public/v2/dataset-versions/from-filter-params", body); }
 
-  async getSnippetUsage(identifier: string, params?: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>(
-      `/prompt-templates/${encodeURIComponent(identifier)}/snippet-usage${buildQueryParams(params)}`,
-      { method: "GET" }
-    );
-  }
+  // Evaluations
+  listEvaluations(params?: Body) { return this.get("/api/public/v2/evaluations", params); }
+  createReport(body: Body) { return this.post("/reports", body); }
+  runReport(id: number, body: Body) { return this.post(`/reports/${id}/run`, body); }
+  getReport(id: number) { return this.get(`/reports/${id}`); }
+  getReportScore(id: number) { return this.get(`/reports/${id}/score`); }
+  addReportColumn(body: Body) { return this.post("/report-columns", body); }
+  updateReportScoreCard(id: number, body: Body) { return this.patch(`/reports/${id}/score-card`, body); }
+  deleteReportsByName(name: string) { return this.del(`/reports/name/${this.enc(name)}`); }
 
-  // ── Tracking ──────────────────────────────────────────────────────────
+  // Agents
+  listWorkflows(params?: Body) { return this.get("/workflows", params); }
+  createWorkflow(body: Body) { return this.post("/rest/workflows", body); }
+  patchWorkflow(idOrName: string, body: Body) { return this.patch(`/rest/workflows/${this.enc(idOrName)}`, body); }
+  runWorkflow(name: string, body: Body) { return this.post(`/workflows/${this.enc(name)}/run`, body); }
+  getWorkflowVersionExecutionResults(params: Body) { return this.get("/workflow-version-execution-results", params); }
 
-  async logRequest(body: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>("/log-request", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-  }
-
-  async trackPrompt(body: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>("/rest/track-prompt", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-  }
-
-  async trackScore(body: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>("/rest/track-score", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-  }
-
-  async trackMetadata(body: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>("/rest/track-metadata", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-  }
-
-  async trackGroup(body: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>("/rest/track-group", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-  }
-
-  async createSpansBulk(body: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>("/spans-bulk", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-  }
-
-  // ── Datasets ──────────────────────────────────────────────────────────
-
-  async listDatasets(params?: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>(
-      `/api/public/v2/datasets${buildQueryParams(params)}`,
-      { method: "GET" }
-    );
-  }
-
-  async createDatasetGroup(body: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>("/api/public/v2/dataset-groups", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-  }
-
-  async createDatasetVersionFromFile(body: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>("/api/public/v2/dataset-versions/from-file", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-  }
-
-  async createDatasetVersionFromFilterParams(body: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>("/api/public/v2/dataset-versions/from-filter-params", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-  }
-
-  // ── Evaluations ───────────────────────────────────────────────────────
-
-  async listEvaluations(params?: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>(
-      `/api/public/v2/evaluations${buildQueryParams(params)}`,
-      { method: "GET" }
-    );
-  }
-
-  async createReport(body: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>("/reports", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-  }
-
-  async runReport(reportId: number, body: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>(`/reports/${reportId}/run`, {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-  }
-
-  async getReport(reportId: number): Promise<unknown> {
-    return this.request<unknown>(`/reports/${reportId}`, { method: "GET" });
-  }
-
-  async getReportScore(reportId: number): Promise<unknown> {
-    return this.request<unknown>(`/reports/${reportId}/score`, { method: "GET" });
-  }
-
-  async addReportColumn(body: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>("/report-columns", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-  }
-
-  async updateReportScoreCard(reportId: number, body: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>(`/reports/${reportId}/score-card`, {
-      method: "PATCH",
-      body: JSON.stringify(body),
-    });
-  }
-
-  async deleteReportsByName(reportName: string): Promise<unknown> {
-    return this.request<unknown>(
-      `/reports/name/${encodeURIComponent(reportName)}`,
-      { method: "DELETE" }
-    );
-  }
-
-  // ── Agents / Workflows ────────────────────────────────────────────────
-
-  async listWorkflows(params?: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>(`/workflows${buildQueryParams(params)}`, { method: "GET" });
-  }
-
-  async createWorkflow(body: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>("/rest/workflows", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-  }
-
-  async patchWorkflow(workflowIdOrName: string, body: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>(
-      `/rest/workflows/${encodeURIComponent(workflowIdOrName)}`,
-      { method: "PATCH", body: JSON.stringify(body) }
-    );
-  }
-
-  async runWorkflow(workflowName: string, body: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>(
-      `/workflows/${encodeURIComponent(workflowName)}/run`,
-      { method: "POST", body: JSON.stringify(body) }
-    );
-  }
-
-  async getWorkflowVersionExecutionResults(params: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>(
-      `/workflow-version-execution-results${buildQueryParams(params)}`,
-      { method: "GET" }
-    );
-  }
-
-  // ── Folders ───────────────────────────────────────────────────────────
-
-  async createFolder(body: Record<string, unknown>): Promise<unknown> {
-    return this.request<unknown>("/api/public/v2/folders", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-  }
+  // Folders
+  createFolder(body: Body) { return this.post("/api/public/v2/folders", body); }
 }

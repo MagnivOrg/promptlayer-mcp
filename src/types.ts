@@ -6,9 +6,6 @@
 
 import { z } from "zod";
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  PROMPT TEMPLATES
-// ═══════════════════════════════════════════════════════════════════════════
 
 // ── Get Prompt Template (POST /prompt-templates/{identifier}) ────────────
 
@@ -137,9 +134,6 @@ export const GetSnippetUsageArgsSchema = z.object({
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  TRACKING
-// ═══════════════════════════════════════════════════════════════════════════
 
 // ── Log Request (POST /log-request) ──────────────────────────────────────
 
@@ -216,9 +210,6 @@ export const CreateSpansBulkArgsSchema = z.object({
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  DATASETS
-// ═══════════════════════════════════════════════════════════════════════════
 
 // ── List Datasets (GET /api/public/v2/datasets) ──────────────────────────
 
@@ -270,9 +261,6 @@ export const CreateDatasetVersionFromFilterParamsArgsSchema = z.object({
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  EVALUATIONS
-// ═══════════════════════════════════════════════════════════════════════════
 
 // ── List Evaluations (GET /api/public/v2/evaluations) ────────────────────
 
@@ -357,9 +345,6 @@ export const DeleteReportsByNameArgsSchema = z.object({
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  AGENTS / WORKFLOWS
-// ═══════════════════════════════════════════════════════════════════════════
 
 // ── List Agents (GET /workflows) ─────────────────────────────────────────
 
@@ -418,9 +403,6 @@ export const GetWorkflowVersionExecutionResultsArgsSchema = z.object({
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  FOLDERS
-// ═══════════════════════════════════════════════════════════════════════════
 
 export const CreateFolderArgsSchema = z.object({
   name: z.string().describe("Folder name (unique within parent)"),
@@ -428,9 +410,6 @@ export const CreateFolderArgsSchema = z.object({
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  DERIVED TYPES
-// ═══════════════════════════════════════════════════════════════════════════
 
 export type GetPromptTemplateParams = Omit<
   z.infer<typeof GetPromptTemplateArgsSchema>,
@@ -468,9 +447,6 @@ export type ListPromptTemplatesResponse = {
   total: number;
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  TOOL DEFINITIONS
-// ═══════════════════════════════════════════════════════════════════════════
 
 export const TOOL_DEFINITIONS = {
   // ── Prompt Templates ────────────────────────────────────────────────
