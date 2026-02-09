@@ -8,6 +8,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { registerTemplateHandlers } from "./handlers/templates.js";
+import { registerTrackingHandlers } from "./handlers/tracking.js";
+import { registerDatasetHandlers } from "./handlers/datasets.js";
+import { registerEvaluationHandlers } from "./handlers/evaluations.js";
+import { registerAgentHandlers } from "./handlers/agents.js";
+import { registerFolderHandlers } from "./handlers/folders.js";
 
 // Initialize the MCP server
 const server = new McpServer({
@@ -17,6 +22,11 @@ const server = new McpServer({
 
 // Register all tool handlers
 registerTemplateHandlers(server);
+registerTrackingHandlers(server);
+registerDatasetHandlers(server);
+registerEvaluationHandlers(server);
+registerAgentHandlers(server);
+registerFolderHandlers(server);
 
 // Main function to start the server
 async function main() {

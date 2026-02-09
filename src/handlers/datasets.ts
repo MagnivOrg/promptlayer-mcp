@@ -1,0 +1,110 @@
+/**
+ * Dataset Handlers
+ * Endpoints: list-datasets, create-dataset-group, create-dataset-version-from-file,
+ *            create-dataset-version-from-filter-params
+ */
+
+import { PromptLayerClient } from "../client.js";
+import { TOOL_DEFINITIONS } from "../types.js";
+import {
+  getApiKey,
+  formatErrorResponse,
+  formatSuccessResponse,
+} from "../utils.js";
+
+type ToolHandlerArgs = Record<string, unknown> & { api_key?: string };
+
+function createToolHandler<TArgs extends ToolHandlerArgs>(
+  clientCall: (client: PromptLayerClient, args: TArgs) => Promise<unknown>,
+  formatMessage: (result: unknown) => string
+) {
+  return async (args: TArgs) => {
+    try {
+      const apiKey = getApiKey(args.api_key);
+      const client = new PromptLayerClient(apiKey);
+      const result = await clientCall(client, args);
+      return formatSuccessResponse(result, formatMessage(result));
+    } catch (error) {
+      return formatErrorResponse(error);
+    }
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function registerDatasetHandlers(server: any) {
+  // ── List Datasets ──────────────────────────────────────────────────
+  const listDs = TOOL_DEFINITIONS["list-datasets"];
+  server.tool(
+    listDs.name,
+    listDs.description,
+    listDs.inputSchema.shape,
+    createToolHandler(
+      (client, args) => {
+        const { api_key: _, ...params } = args;
+        return client.listDatasets(params);
+      },
+      (result) => {
+        const r = result as { items?: unknown[]; total?: number };
+        return `Found ${r.items?.length ?? 0} dataset(s) (total: ${r.total ?? "unknown"})`;
+      }
+    )
+  );
+
+  // ── Create Dataset Group ───────────────────────────────────────────
+  const createGroup = TOOL_DEFINITIONS["create-dataset-group"];
+  server.tool(
+    createGroup.name,
+    createGroup.description,
+    createGroup.inputSchema.shape,
+    createToolHandler(
+      (client, args) => {
+        const { api_key: _, ...body } = args;
+        return client.createDatasetGroup(body);
+      },
+      (result) => {
+        const r = result as { id?: number; name?: string };
+        return `Dataset group created${r.name ? ` "${r.name}"` : ""}${r.id ? ` (ID: ${r.id})` : ""}`;
+      }
+    )
+  );
+
+  // ── Create Dataset Version from File ───────────────────────────────
+  const fromFile = TOOL_DEFINITIONS["create-dataset-version-from-file"];
+  server.tool(
+    fromFile.name,
+    fromFile.description,
+    fromFile.inputSchema.shape,
+    createToolHandler(
+      (client, args) => {
+        const { api_key: _, dataset_group_id, file_content, file_name } = args as {
+          dataset_group_id: number;
+          file_content: string;
+          file_name: string;
+          api_key?: string;
+        };
+        // Build form data for file upload
+        const blob = new Blob([file_content], { type: "application/octet-stream" });
+        const formData = new FormData();
+        formData.append("file", blob, file_name);
+        formData.append("dataset_group_id", String(dataset_group_id));
+        return client.createDatasetVersionFromFile(formData);
+      },
+      () => "Dataset version creation from file initiated (async)"
+    )
+  );
+
+  // ── Create Dataset Version from Filter Params ──────────────────────
+  const fromFilter = TOOL_DEFINITIONS["create-dataset-version-from-filter-params"];
+  server.tool(
+    fromFilter.name,
+    fromFilter.description,
+    fromFilter.inputSchema.shape,
+    createToolHandler(
+      (client, args) => {
+        const { api_key: _, ...body } = args;
+        return client.createDatasetVersionFromFilterParams(body);
+      },
+      () => "Dataset version creation from filter params initiated (async)"
+    )
+  );
+}
