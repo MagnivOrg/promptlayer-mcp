@@ -51,13 +51,7 @@ Structurally compares the two JSON files:
 
 Some issues are expected and won't cause the script to fail. They're declared in the `KNOWN_EXCEPTIONS` array in `scripts/diff-endpoints.ts` with inline comments explaining each one.
 
-Current known exceptions:
-
-| Issue | Why |
-|---|---|
-| `update-report-score-card` extra in MCP | Endpoint is in [reference docs](https://docs.promptlayer.com/reference/update-report-score-card) but not in OpenAPI spec |
-| `callback_url` extra field on `run-workflow` | Field is in [reference docs](https://docs.promptlayer.com/reference/run-workflow) but not in OpenAPI spec |
-| `log-request` input/output type mismatch | OpenAPI uses `oneOf(ChatPrompt, CompletionPrompt)`, we use `object` because we pass through as-is |
+There are currently 31 known exceptions. Most exist because the OpenAPI spec lags behind the actual backend — we add fields the backend accepts even if they aren't in the spec yet. Each exception has an inline comment in `scripts/diff-endpoints.ts` explaining why.
 
 When adding a new exception: add the exact issue string to `KNOWN_EXCEPTIONS` in `scripts/diff-endpoints.ts` with a comment explaining why. Also add a `// NOTE:` comment on the affected code in `src/types.ts`.
 

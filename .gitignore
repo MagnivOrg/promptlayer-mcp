@@ -12,3 +12,6 @@ ref-app/
 # Generated sync artifacts
 scripts/openapi-endpoints.json
 scripts/mcp-tools.json
+
+# Internal backend verification docs (not for public)
+BACKEND_VERIFICATION.md

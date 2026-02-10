@@ -33,6 +33,60 @@ const KNOWN_EXCEPTIONS: string[] = [
   // as-is to the API — the server validates the discriminated union, not us.
   'TYPE MISMATCH: POST /log-request > "input": MCP=object, OpenAPI=oneOf [tool: log-request]',
   'TYPE MISMATCH: POST /log-request > "output": MCP=object, OpenAPI=oneOf [tool: log-request]',
+
+  // workspace_id is accepted by the backend but not yet in the OpenAPI spec for these endpoints.
+  'EXTRA FIELD: GET /prompt-templates > "workspace_id" not in OpenAPI [tool: list-prompt-templates]',
+  'EXTRA FIELD: POST /api/public/v2/folders > "workspace_id" not in OpenAPI [tool: create-folder]',
+
+  // snippet_overrides is accepted by the backend publish endpoint but not in OpenAPI spec.
+  'EXTRA FIELD: POST /rest/prompt-templates > "snippet_overrides" not in OpenAPI [tool: publish-prompt-template]',
+
+  // Backend accepts prompt_version_id as alternative to prompt_version_number for label ops,
+  // and we make prompt_version_number optional to support both. Not yet in OpenAPI spec.
+  'EXTRA FIELD: POST /prompts/{prompt_id}/label > "prompt_version_id" not in OpenAPI [tool: create-prompt-label]',
+  'EXTRA FIELD: PATCH /prompt-labels/{prompt_label_id} > "prompt_version_id" not in OpenAPI [tool: move-prompt-label]',
+  'REQUIRED MISMATCH: POST /prompts/{prompt_id}/label > "prompt_version_number": MCP=false, OpenAPI=true [tool: create-prompt-label]',
+  'REQUIRED MISMATCH: PATCH /prompt-labels/{prompt_label_id} > "prompt_version_number": MCP=false, OpenAPI=true [tool: move-prompt-label]',
+
+  // score_name is accepted by the backend log-request endpoint but not in OpenAPI spec.
+  'EXTRA FIELD: POST /log-request > "score_name" not in OpenAPI [tool: log-request]',
+
+  // folder_id is accepted by the backend create-dataset-group endpoint but not in OpenAPI spec.
+  'EXTRA FIELD: POST /api/public/v2/dataset-groups > "folder_id" not in OpenAPI [tool: create-dataset-group]',
+
+  // Backend auto-generates name if omitted for dataset groups; OpenAPI marks it required.
+  'REQUIRED MISMATCH: POST /api/public/v2/dataset-groups > "name": MCP=false, OpenAPI=true [tool: create-dataset-group]',
+
+  // is_part_of_score is accepted by the backend add-report-column endpoint but not in OpenAPI spec.
+  'EXTRA FIELD: POST /report-columns > "is_part_of_score" not in OpenAPI [tool: add-report-column]',
+
+  // workflow_node_id and workflow_node_name are accepted by the backend execution results
+  // endpoint but not in OpenAPI spec.
+  'EXTRA FIELD: GET /workflow-version-execution-results > "workflow_node_id" not in OpenAPI [tool: get-workflow-version-execution-results]',
+  'EXTRA FIELD: GET /workflow-version-execution-results > "workflow_node_name" not in OpenAPI [tool: get-workflow-version-execution-results]',
+
+  // The create-dataset-version-from-filter-params endpoint passes through to the backend's
+  // RequestLogFilterParams model which has many more filter fields than the OpenAPI spec lists.
+  // We include the full set from the backend for completeness. The OpenAPI spec only documents
+  // a simplified subset (dataset_group_id, variables_to_parse, start_time, end_time, plus the
+  // fields we added: prompt_id, prompt_version_id, prompt_label_id, workspace_id, tags, metadata).
+  'EXTRA FIELD: POST /api/public/v2/dataset-versions/from-filter-params > "id" not in OpenAPI [tool: create-dataset-version-from-filter-params]',
+  'EXTRA FIELD: POST /api/public/v2/dataset-versions/from-filter-params > "limit" not in OpenAPI [tool: create-dataset-version-from-filter-params]',
+  'EXTRA FIELD: POST /api/public/v2/dataset-versions/from-filter-params > "tags_and" not in OpenAPI [tool: create-dataset-version-from-filter-params]',
+  'EXTRA FIELD: POST /api/public/v2/dataset-versions/from-filter-params > "tags_or" not in OpenAPI [tool: create-dataset-version-from-filter-params]',
+  'EXTRA FIELD: POST /api/public/v2/dataset-versions/from-filter-params > "metadata_and" not in OpenAPI [tool: create-dataset-version-from-filter-params]',
+  'EXTRA FIELD: POST /api/public/v2/dataset-versions/from-filter-params > "metadata_or" not in OpenAPI [tool: create-dataset-version-from-filter-params]',
+  'EXTRA FIELD: POST /api/public/v2/dataset-versions/from-filter-params > "prompt_templates_include" not in OpenAPI [tool: create-dataset-version-from-filter-params]',
+  'EXTRA FIELD: POST /api/public/v2/dataset-versions/from-filter-params > "prompt_templates_exclude" not in OpenAPI [tool: create-dataset-version-from-filter-params]',
+  'EXTRA FIELD: POST /api/public/v2/dataset-versions/from-filter-params > "starred" not in OpenAPI [tool: create-dataset-version-from-filter-params]',
+  'EXTRA FIELD: POST /api/public/v2/dataset-versions/from-filter-params > "status" not in OpenAPI [tool: create-dataset-version-from-filter-params]',
+  'EXTRA FIELD: POST /api/public/v2/dataset-versions/from-filter-params > "sort_by" not in OpenAPI [tool: create-dataset-version-from-filter-params]',
+  'EXTRA FIELD: POST /api/public/v2/dataset-versions/from-filter-params > "sort_order" not in OpenAPI [tool: create-dataset-version-from-filter-params]',
+  'EXTRA FIELD: POST /api/public/v2/dataset-versions/from-filter-params > "order_by_random" not in OpenAPI [tool: create-dataset-version-from-filter-params]',
+
+  // The OpenAPI spec defines scores as object but backend uses a list of {name, operator, value}.
+  // Our array type matches what the backend actually accepts.
+  'TYPE MISMATCH: POST /api/public/v2/dataset-versions/from-filter-params > "scores": MCP=array, OpenAPI=object [tool: create-dataset-version-from-filter-params]',
 ];
 // ─────────────────────────────────────────────────────────────────────────────
 

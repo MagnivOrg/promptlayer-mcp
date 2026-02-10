@@ -62,7 +62,7 @@ export function registerAllTools(server: any) {
 
   // Datasets
   reg(t["list-datasets"], (c, a) => c.listDatasets(body(a)),
-    (r) => { const { items, total } = r as { items?: unknown[]; total?: number }; return `${items?.length ?? 0} dataset(s) (total: ${total ?? "?"})`; });
+    (r) => { const { datasets, total } = r as { datasets?: unknown[]; total?: number }; return `${datasets?.length ?? 0} dataset(s) (total: ${total ?? "?"})`; });
   reg(t["create-dataset-group"], (c, a) => c.createDatasetGroup(body(a)), () => "Dataset group created");
   reg(t["create-dataset-version-from-file"], (c, a) => c.createDatasetVersionFromFile(body(a)), () => "Dataset version from file initiated");
   reg(t["create-dataset-version-from-filter-params"], (c, a) => c.createDatasetVersionFromFilterParams(body(a)), () => "Dataset version from history initiated");

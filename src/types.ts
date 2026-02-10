@@ -72,6 +72,7 @@ export const ListPromptTemplatesArgsSchema = z.object({
   label: z.string().optional().describe("Filter by release label"),
   name: z.string().optional().describe("Filter by name (case-insensitive partial match)"),
   status: z.enum(["active", "deleted", "all"]).optional().describe("Filter by status (default: 'active')"),
+  workspace_id: z.number().int().optional().describe("Workspace ID"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -83,13 +84,18 @@ export const PublishPromptTemplateArgsSchema = z.object({
     prompt_name: z.string().describe("Name of the prompt template"),
     tags: z.array(z.string()).optional().describe("Tags to associate"),
     folder_id: z.number().int().optional().describe("Folder ID to publish into"),
-  }).describe("Template metadata: prompt_name (required), tags, folder_id"),
+    workspace_id: z.number().int().optional().describe("Workspace ID"),
+  }).describe("Template metadata: prompt_name (required), tags, folder_id, workspace_id"),
   prompt_version: z.object({
     prompt_template: z.record(z.unknown()).describe("The template content in chat ({type:'chat', messages:[...]}) or completion format"),
     commit_message: z.string().optional().describe("Commit message (max 72 chars)"),
     metadata: z.record(z.unknown()).optional().describe("Metadata including model configuration"),
+    provider_base_url_name: z.string().optional().describe("Provider base URL name (max 255 chars)"),
+    provider_id: z.number().int().optional().describe("Provider ID"),
+    inference_client_name: z.string().optional().describe("Inference client name (max 255 chars)"),
   }).describe("Version data: prompt_template content (required), commit_message, metadata"),
   release_labels: z.array(z.string()).optional().describe("Release labels to assign (e.g. ['prod'])"),
+  snippet_overrides: z.record(z.string()).optional().describe("Snippet overrides: map snippet names to replacement content"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -105,7 +111,8 @@ export const ListPromptTemplateLabelsArgsSchema = z.object({
 
 export const CreatePromptLabelArgsSchema = z.object({
   prompt_id: z.number().int().describe("The prompt ID (path parameter)"),
-  prompt_version_number: z.number().int().describe("The version number to attach the label to"),
+  prompt_version_number: z.number().int().optional().describe("The version number to attach the label to (provide this or prompt_version_id)"),
+  prompt_version_id: z.number().int().optional().describe("The version ID to attach the label to (provide this or prompt_version_number)"),
   name: z.string().describe("The label name (e.g. 'prod', 'staging')"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
@@ -115,7 +122,8 @@ export const CreatePromptLabelArgsSchema = z.object({
 
 export const MovePromptLabelArgsSchema = z.object({
   prompt_label_id: z.number().int().describe("The prompt label ID to move"),
-  prompt_version_number: z.number().int().describe("Target version number to move the label to"),
+  prompt_version_number: z.number().int().optional().describe("Target version number to move the label to (provide this or prompt_version_id)"),
+  prompt_version_id: z.number().int().optional().describe("Target version ID to move the label to (provide this or prompt_version_number)"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -150,7 +158,8 @@ export const LogRequestArgsSchema = z.object({
   request_end_time: z.string().describe("ISO 8601 datetime when response received"),
   parameters: z.record(z.unknown()).optional().describe("Model parameters (temperature, max_tokens, response_format, etc.)"),
   tags: z.array(z.string()).optional().describe("Tags for categorizing the request"),
-  metadata: z.record(z.unknown()).optional().describe("Custom key-value metadata for search/filtering"),
+  score_name: z.string().optional().describe("Score name (for named scores, e.g. 'relevance')"),
+  metadata: z.record(z.string()).optional().describe("Custom key-value metadata for search/filtering"),
   prompt_name: z.string().optional().describe("Prompt template name to associate"),
   prompt_id: z.number().int().optional().describe("Prompt template ID to associate"),
   prompt_version_number: z.number().int().optional().describe("Prompt template version number"),
@@ -195,7 +204,7 @@ export const TrackScoreArgsSchema = z.object({
 
 export const TrackMetadataArgsSchema = z.object({
   request_id: z.number().int().describe("PromptLayer request ID"),
-  metadata: z.record(z.unknown()).describe("Metadata key-value pairs (e.g. {session_id, user_id})"),
+  metadata: z.record(z.string()).describe("Metadata key-value pairs (e.g. {session_id: '123', user_id: 'abc'})"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -234,8 +243,9 @@ export const ListDatasetsArgsSchema = z.object({
 // ── Create Dataset Group (POST /api/public/v2/dataset-groups) ────────────
 
 export const CreateDatasetGroupArgsSchema = z.object({
-  name: z.string().describe("Dataset group name (unique within workspace)"),
+  name: z.string().optional().describe("Dataset group name (unique within workspace). Auto-generated if omitted."),
   workspace_id: z.number().int().optional().describe("Workspace ID"),
+  folder_id: z.number().int().optional().describe("Folder ID to place the dataset group into"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -253,15 +263,43 @@ export const CreateDatasetVersionFromFileArgsSchema = z.object({
 export const CreateDatasetVersionFromFilterParamsArgsSchema = z.object({
   dataset_group_id: z.number().int().describe("Dataset group ID"),
   variables_to_parse: z.array(z.string()).optional().describe("Variables to extract from request logs"),
-  prompt_id: z.number().int().optional().describe("Filter by prompt ID"),
+  prompt_id: z.number().int().optional().describe("Filter by prompt template ID"),
   prompt_version_id: z.number().int().optional().describe("Filter by prompt version ID"),
   prompt_label_id: z.number().int().optional().describe("Filter by prompt label ID"),
   workspace_id: z.number().int().optional().describe("Workspace ID"),
+  tags: z.array(z.string()).optional().describe("Filter by tags (simple tag filter)"),
+  metadata: z.record(z.string()).optional().describe("Simple metadata key-value filter"),
   start_time: z.string().optional().describe("Start time filter (ISO 8601)"),
   end_time: z.string().optional().describe("End time filter (ISO 8601)"),
-  tags: z.array(z.string()).optional().describe("Filter by tags"),
-  metadata: z.record(z.unknown()).optional().describe("Filter by metadata key-value pairs"),
-  scores: z.record(z.unknown()).optional().describe("Filter by score criteria"),
+  id: z.number().int().optional().describe("Filter by specific request log ID"),
+  limit: z.number().int().optional().describe("Limit number of request logs to pull"),
+  tags_and: z.array(z.string()).optional().describe("Filter by tags (AND logic — all must match)"),
+  tags_or: z.array(z.string()).optional().describe("Filter by tags (OR logic — any can match)"),
+  metadata_and: z.array(z.object({ key: z.string(), value: z.string() })).optional().describe("Metadata filters with AND logic (all must match). Each item: {key, value}"),
+  metadata_or: z.array(z.object({ key: z.string(), value: z.string() })).optional().describe("Metadata filters with OR logic (any can match). Each item: {key, value}"),
+  scores: z.array(z.object({
+    name: z.string().describe("Score name"),
+    operator: z.enum([">", "<", ">=", "<=", "="]).describe("Comparison operator"),
+    value: z.number().int().describe("Score value to compare against"),
+  })).optional().describe("Filter by score criteria. Each item: {name, operator, value}"),
+  prompt_templates_include: z.array(z.object({
+    name: z.string().describe("Prompt template name"),
+    version_numbers: z.array(z.number().int()).optional().describe("Filter to specific version numbers"),
+    labels: z.array(z.string()).optional().describe("Filter to specific labels"),
+  })).optional().describe("Include request logs matching these prompt templates"),
+  prompt_templates_exclude: z.array(z.object({
+    name: z.string().describe("Prompt template name"),
+    version_numbers: z.array(z.number().int()).optional().describe("Filter to specific version numbers"),
+    labels: z.array(z.string()).optional().describe("Filter to specific labels"),
+  })).optional().describe("Exclude request logs matching these prompt templates"),
+  starred: z.boolean().optional().describe("Filter by starred status"),
+  status: z.array(z.enum(["SUCCESS", "WARNING", "ERROR"])).optional().describe("Filter by request log status"),
+  sort_by: z.enum([
+    "request_start_time", "input_tokens", "output_tokens", "price",
+    "score", "latency", "prompt_name", "status",
+  ]).optional().describe("Sort field"),
+  sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction"),
+  order_by_random: z.boolean().optional().describe("Random ordering (requires limit)"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -323,11 +361,12 @@ export const AddReportColumnArgsSchema = z.object({
     "COMPARE", "CONTAINS", "COSINE_SIMILARITY", "COUNT", "ENDPOINT", "MCP",
     "HUMAN", "JSON_PATH", "LLM_ASSERTION", "MATH_OPERATOR", "MIN_MAX",
     "PARSE_VALUE", "APPLY_DIFF", "PROMPT_TEMPLATE", "REGEX", "REGEX_EXTRACTION",
-    "VARIABLE", "XML_PATH", "WORKFLOW", "CODING_AGENT",
+    "VARIABLE", "WHILE_LOOP", "FOR_LOOP", "XML_PATH", "WORKFLOW",
   ]).describe("Column type"),
   name: z.string().describe("Column name (unique within pipeline)"),
   configuration: z.record(z.unknown()).describe("Column-type-specific configuration"),
   position: z.number().int().optional().describe("Position in pipeline (auto-assigned if omitted)"),
+  is_part_of_score: z.boolean().optional().describe("Whether this column contributes to the overall pipeline score"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -369,7 +408,7 @@ export const CreateWorkflowArgsSchema = z.object({
   folder_id: z.number().int().optional().describe("Folder ID"),
   commit_message: z.string().optional().describe("Version commit message"),
   nodes: z.array(z.record(z.unknown())).describe("Node configs (each: name, node_type, configuration, is_output_node required; dependencies optional)"),
-  required_input_variables: z.record(z.unknown()).optional().describe("Input variable names to types, e.g. {user_query: 'string'}"),
+  required_input_variables: z.record(z.string()).optional().describe("Input variable names to types, e.g. {user_query: 'string'}"),
   edges: z.array(z.record(z.unknown())).optional().describe("Conditional connections between nodes"),
   release_labels: z.array(z.string()).optional().describe("Release labels (e.g. ['production'])"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
@@ -382,7 +421,7 @@ export const PatchWorkflowArgsSchema = z.object({
   base_version: z.number().int().optional().describe("Version to base changes on (defaults to latest)"),
   commit_message: z.string().optional().describe("Version commit message"),
   nodes: z.record(z.unknown()).optional().describe("Node updates keyed by name. Set value to null to remove a node."),
-  required_input_variables: z.record(z.unknown()).optional().describe("Replaces input variables entirely if provided"),
+  required_input_variables: z.record(z.string()).optional().describe("Replaces input variables entirely if provided"),
   edges: z.array(z.record(z.unknown())).optional().describe("Replaces edges entirely if provided"),
   release_labels: z.array(z.string()).optional().describe("Labels for the new version"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
@@ -395,7 +434,7 @@ export const RunWorkflowArgsSchema = z.object({
   input_variables: z.record(z.unknown()).optional().describe("Input variables for the agent"),
   workflow_version_number: z.number().int().optional().describe("Version number to run (defaults to latest)"),
   workflow_label_name: z.string().optional().describe("Release label to run (e.g. 'prod')"),
-  metadata: z.record(z.unknown()).optional().describe("Metadata to attach to the execution"),
+  metadata: z.record(z.string()).optional().describe("Metadata to attach to the execution"),
   return_all_outputs: z.boolean().optional().describe("Return all node outputs (default: false, returns only final output)"),
   // NOTE: callback_url is in the reference docs but not the OpenAPI spec.
   // Tracked as a known exception in scripts/diff-endpoints.ts.
@@ -408,6 +447,8 @@ export const RunWorkflowArgsSchema = z.object({
 export const GetWorkflowVersionExecutionResultsArgsSchema = z.object({
   workflow_version_execution_id: z.number().int().describe("Execution ID to retrieve results for"),
   return_all_outputs: z.boolean().optional().describe("Include all output nodes (default: false)"),
+  workflow_node_id: z.number().int().optional().describe("Filter results to a specific node by ID"),
+  workflow_node_name: z.string().optional().describe("Filter results to a specific node by name"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -415,6 +456,7 @@ export const GetWorkflowVersionExecutionResultsArgsSchema = z.object({
 export const CreateFolderArgsSchema = z.object({
   name: z.string().describe("Folder name (unique within parent)"),
   parent_id: z.number().int().optional().describe("Parent folder ID (root if omitted)"),
+  workspace_id: z.number().int().optional().describe("Workspace ID"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
