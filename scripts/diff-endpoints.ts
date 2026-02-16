@@ -23,6 +23,27 @@ const KNOWN_EXCEPTIONS: string[] = [
   // it because users need it; it will resolve when PromptLayer adds it to the spec.
   "EXTRA IN MCP (not in OpenAPI): PATCH /reports/{report_id}/score-card (tool: update-report-score-card)",
 
+  // These endpoints exist in the OpenAPI spec but were intentionally removed from the MCP server.
+  // track-prompt, track-score, track-metadata, and track-group are redundant with log-request
+  // which accepts all tracking fields inline. add-report-column is removed as well.
+  "MISSING IN MCP: POST /rest/track-prompt (Track Prompt)",
+  "MISSING IN MCP: POST /rest/track-score (Track Score)",
+  "MISSING IN MCP: POST /rest/track-metadata (Track Metadata)",
+  "MISSING IN MCP: POST /rest/track-group (Track Group)",
+  "MISSING IN MCP: POST /report-columns (Add Column to Evaluation Pipeline)",
+
+  // get-workflow exists in the backend (public_api/workflows/get_workflows_id_or_name.py)
+  // but is not in the OpenAPI spec.
+  "EXTRA IN MCP (not in OpenAPI): GET /workflows/{workflow_id_or_name} (tool: get-workflow)",
+
+  // Folder management endpoints exist in the backend (public_api/) but are not yet in the OpenAPI spec.
+  // edit-folder was added in PR #244.
+  "EXTRA IN MCP (not in OpenAPI): PATCH /api/public/v2/folders/{folder_id} (tool: edit-folder)",
+  "EXTRA IN MCP (not in OpenAPI): GET /api/public/v2/folders/entities (tool: get-folder-entities)",
+  "EXTRA IN MCP (not in OpenAPI): POST /api/public/v2/folders/entities (tool: move-folder-entities)",
+  "EXTRA IN MCP (not in OpenAPI): DELETE /api/public/v2/folders/entities (tool: delete-folder-entities)",
+  "EXTRA IN MCP (not in OpenAPI): GET /api/public/v2/folders/resolve-id (tool: resolve-folder-id)",
+
   // callback_url is documented in the run-workflow reference text
   // (https://docs.promptlayer.com/reference/run-workflow) under Request Body
   // but is not yet in the OpenAPI spec. We include it for async webhook support.
@@ -56,9 +77,6 @@ const KNOWN_EXCEPTIONS: string[] = [
 
   // Backend auto-generates name if omitted for dataset groups; OpenAPI marks it required.
   'REQUIRED MISMATCH: POST /api/public/v2/dataset-groups > "name": MCP=false, OpenAPI=true [tool: create-dataset-group]',
-
-  // is_part_of_score is accepted by the backend add-report-column endpoint but not in OpenAPI spec.
-  'EXTRA FIELD: POST /report-columns > "is_part_of_score" not in OpenAPI [tool: add-report-column]',
 
   // workflow_node_id and workflow_node_name are accepted by the backend execution results
   // endpoint but not in OpenAPI spec.

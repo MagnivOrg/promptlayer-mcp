@@ -29,10 +29,6 @@ const TOOL_TO_ENDPOINT: Record<string, { method: string; path: string }> = {
   "delete-prompt-label":        { method: "DELETE", path: "/prompt-labels/{prompt_label_id}" },
   "get-snippet-usage":          { method: "GET",    path: "/prompt-templates/{identifier}/snippet-usage" },
   "log-request":                { method: "POST",   path: "/log-request" },
-  "track-prompt":               { method: "POST",   path: "/rest/track-prompt" },
-  "track-score":                { method: "POST",   path: "/rest/track-score" },
-  "track-metadata":             { method: "POST",   path: "/rest/track-metadata" },
-  "track-group":                { method: "POST",   path: "/rest/track-group" },
   "create-spans-bulk":          { method: "POST",   path: "/spans-bulk" },
   "list-datasets":              { method: "GET",    path: "/api/public/v2/datasets" },
   "create-dataset-group":       { method: "POST",   path: "/api/public/v2/dataset-groups" },
@@ -43,7 +39,6 @@ const TOOL_TO_ENDPOINT: Record<string, { method: string; path: string }> = {
   "run-report":                 { method: "POST",   path: "/reports/{report_id}/run" },
   "get-report":                 { method: "GET",    path: "/reports/{report_id}" },
   "get-report-score":           { method: "GET",    path: "/reports/{report_id}/score" },
-  "add-report-column":          { method: "POST",   path: "/report-columns" },
   "update-report-score-card":   { method: "PATCH",  path: "/reports/{report_id}/score-card" },
   "delete-reports-by-name":     { method: "DELETE", path: "/reports/name/{report_name}" },
   "list-workflows":             { method: "GET",    path: "/workflows" },
@@ -51,7 +46,13 @@ const TOOL_TO_ENDPOINT: Record<string, { method: string; path: string }> = {
   "patch-workflow":             { method: "PATCH",  path: "/rest/workflows/{workflow_id_or_name}" },
   "run-workflow":               { method: "POST",   path: "/workflows/{workflow_name}/run" },
   "get-workflow-version-execution-results": { method: "GET", path: "/workflow-version-execution-results" },
+  "get-workflow":               { method: "GET",    path: "/workflows/{workflow_id_or_name}" },
   "create-folder":              { method: "POST",   path: "/api/public/v2/folders" },
+  "edit-folder":                { method: "PATCH",  path: "/api/public/v2/folders/{folder_id}" },
+  "get-folder-entities":        { method: "GET",    path: "/api/public/v2/folders/entities" },
+  "move-folder-entities":       { method: "POST",   path: "/api/public/v2/folders/entities" },
+  "delete-folder-entities":     { method: "DELETE", path: "/api/public/v2/folders/entities" },
+  "resolve-folder-id":          { method: "GET",    path: "/api/public/v2/folders/resolve-id" },
 };
 
 type ToolEntry = {

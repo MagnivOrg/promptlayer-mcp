@@ -57,10 +57,6 @@ export class PromptLayerClient {
 
   // Tracking
   logRequest(body: Body) { return this.post("/log-request", body); }
-  trackPrompt(body: Body) { return this.post("/rest/track-prompt", body); }
-  trackScore(body: Body) { return this.post("/rest/track-score", body); }
-  trackMetadata(body: Body) { return this.post("/rest/track-metadata", body); }
-  trackGroup(body: Body) { return this.post("/rest/track-group", body); }
   createSpansBulk(body: Body) { return this.post("/spans-bulk", body); }
 
   // Datasets
@@ -75,12 +71,12 @@ export class PromptLayerClient {
   runReport(id: number, body: Body) { return this.post(`/reports/${id}/run`, body); }
   getReport(id: number) { return this.get(`/reports/${id}`); }
   getReportScore(id: number) { return this.get(`/reports/${id}/score`); }
-  addReportColumn(body: Body) { return this.post("/report-columns", body); }
   updateReportScoreCard(id: number, body: Body) { return this.patch(`/reports/${id}/score-card`, body); }
   deleteReportsByName(name: string) { return this.del(`/reports/name/${this.enc(name)}`); }
 
   // Agents
   listWorkflows(params?: Body) { return this.get("/workflows", params); }
+  getWorkflow(idOrName: string) { return this.get(`/workflows/${this.enc(idOrName)}`); }
   createWorkflow(body: Body) { return this.post("/rest/workflows", body); }
   patchWorkflow(idOrName: string, body: Body) { return this.patch(`/rest/workflows/${this.enc(idOrName)}`, body); }
   runWorkflow(name: string, body: Body) { return this.post(`/workflows/${this.enc(name)}/run`, body); }
@@ -88,4 +84,9 @@ export class PromptLayerClient {
 
   // Folders
   createFolder(body: Body) { return this.post("/api/public/v2/folders", body); }
+  editFolder(folderId: number, body: Body) { return this.patch(`/api/public/v2/folders/${folderId}`, body); }
+  getFolderEntities(params: Body) { return this.get("/api/public/v2/folders/entities", params); }
+  moveFolderEntities(body: Body) { return this.post("/api/public/v2/folders/entities", body); }
+  deleteFolderEntities(body: Body) { return this.request("/api/public/v2/folders/entities", { method: "DELETE", body: JSON.stringify(body) }); }
+  resolveFolderId(params: Body) { return this.get("/api/public/v2/folders/resolve-id", params); }
 }

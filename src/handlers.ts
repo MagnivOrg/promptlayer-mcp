@@ -53,10 +53,6 @@ export function registerAllTools(server: any) {
   // Tracking
   reg(t["log-request"], (c, a) => c.logRequest(body(a)),
     (r) => { const id = (r as { request_id?: unknown }).request_id; return id ? `Logged (ID: ${id})` : "Logged"; });
-  reg(t["track-prompt"], (c, a) => c.trackPrompt(body(a)), () => "Prompt tracked");
-  reg(t["track-score"], (c, a) => c.trackScore(body(a)), () => "Score tracked");
-  reg(t["track-metadata"], (c, a) => c.trackMetadata(body(a)), () => "Metadata tracked");
-  reg(t["track-group"], (c, a) => c.trackGroup(body(a)), () => "Group tracked");
   reg(t["create-spans-bulk"], (c, a) => c.createSpansBulk(body(a)),
     (r) => `Created ${(r as { spans?: unknown[] }).spans?.length ?? 0} span(s)`);
 
@@ -81,7 +77,6 @@ export function registerAllTools(server: any) {
   reg(t["get-report-score"],
     (c, a) => c.getReportScore((a as { report_id: number }).report_id),
     (r) => { const s = (r as { score?: number }).score; return s !== undefined ? `Score: ${s}` : "Score retrieved"; });
-  reg(t["add-report-column"], (c, a) => c.addReportColumn(body(a)), () => "Column added");
   reg(t["update-report-score-card"],
     (c, a) => { const { api_key: _, report_id, ...b } = a as { report_id: number; api_key?: string } & Args; return c.updateReportScoreCard(report_id, b); },
     () => "Score card updated");
@@ -101,7 +96,21 @@ export function registerAllTools(server: any) {
   reg(t["get-workflow-version-execution-results"],
     (c, a) => c.getWorkflowVersionExecutionResults(body(a)),
     () => "Execution results retrieved");
+  reg(t["get-workflow"],
+    (c, a) => c.getWorkflow((a as { workflow_id_or_name: string }).workflow_id_or_name),
+    (r) => { const w = r as { workflow?: { name?: string } }; return `Agent "${w.workflow?.name ?? ""}" retrieved`; });
 
   // Folders
   reg(t["create-folder"], (c, a) => c.createFolder(body(a)), () => "Folder created");
+  reg(t["edit-folder"],
+    (c, a) => { const { api_key: _, folder_id, ...b } = a as { folder_id: number; api_key?: string } & Args; return c.editFolder(folder_id, b); },
+    () => "Folder renamed");
+  reg(t["get-folder-entities"], (c, a) => c.getFolderEntities(body(a)),
+    (r) => { const e = (r as { entities?: unknown[] }).entities; return `${e?.length ?? 0} entity/entities`; });
+  reg(t["move-folder-entities"], (c, a) => c.moveFolderEntities(body(a)),
+    (r) => { const c_ = (r as { moved_count?: number }).moved_count; return `Moved ${c_ ?? 0} entity/entities`; });
+  reg(t["delete-folder-entities"], (c, a) => c.deleteFolderEntities(body(a)),
+    (r) => { const c_ = (r as { moved_count?: number }).moved_count; return `Deleted ${c_ ?? 0} entity/entities`; });
+  reg(t["resolve-folder-id"], (c, a) => c.resolveFolderId(body(a)),
+    (r) => { const id = (r as { id?: number }).id; return id ? `Folder ID: ${id}` : "Folder not found"; });
 }

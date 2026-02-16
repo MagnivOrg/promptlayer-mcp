@@ -180,42 +180,6 @@ export const LogRequestArgsSchema = z.object({
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
-// ── Track Prompt (POST /rest/track-prompt) ───────────────────────────────
-
-export const TrackPromptArgsSchema = z.object({
-  request_id: z.number().int().describe("PromptLayer request ID"),
-  prompt_name: z.string().describe("Prompt template name in the registry"),
-  prompt_input_variables: z.record(z.unknown()).optional().describe("Input variables used to format the template"),
-  version: z.number().int().optional().describe("Version number (defaults to latest)"),
-  label: z.string().optional().describe("Release label of the prompt version"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Track Score (POST /rest/track-score) ─────────────────────────────────
-
-export const TrackScoreArgsSchema = z.object({
-  request_id: z.number().int().describe("PromptLayer request ID"),
-  score: z.number().int().min(0).max(100).describe("Score value (0-100)"),
-  name: z.string().optional().describe("Score name for multiple scores per request (e.g. 'relevance')"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Track Metadata (POST /rest/track-metadata) ──────────────────────────
-
-export const TrackMetadataArgsSchema = z.object({
-  request_id: z.number().int().describe("PromptLayer request ID"),
-  metadata: z.record(z.string()).describe("Metadata key-value pairs (e.g. {session_id: '123', user_id: 'abc'})"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Track Group (POST /rest/track-group) ─────────────────────────────────
-
-export const TrackGroupArgsSchema = z.object({
-  request_id: z.number().int().describe("PromptLayer request ID"),
-  group_id: z.number().int().describe("Group ID to associate the request with"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
 // ── Create Spans Bulk (POST /spans-bulk) ─────────────────────────────────
 
 export const CreateSpansBulkArgsSchema = z.object({
@@ -351,25 +315,6 @@ export const GetReportScoreArgsSchema = z.object({
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
-// ── Add Column to Evaluation Pipeline (POST /report-columns) ────────────
-
-export const AddReportColumnArgsSchema = z.object({
-  report_id: z.number().int().describe("Evaluation pipeline ID"),
-  column_type: z.enum([
-    "ABSOLUTE_NUMERIC_DISTANCE", "AI_DATA_EXTRACTION", "ASSERT_VALID",
-    "CONVERSATION_SIMULATOR", "COALESCE", "CODE_EXECUTION", "COMBINE_COLUMNS",
-    "COMPARE", "CONTAINS", "COSINE_SIMILARITY", "COUNT", "ENDPOINT", "MCP",
-    "HUMAN", "JSON_PATH", "LLM_ASSERTION", "MATH_OPERATOR", "MIN_MAX",
-    "PARSE_VALUE", "APPLY_DIFF", "PROMPT_TEMPLATE", "REGEX", "REGEX_EXTRACTION",
-    "VARIABLE", "WHILE_LOOP", "FOR_LOOP", "XML_PATH", "WORKFLOW",
-  ]).describe("Column type"),
-  name: z.string().describe("Column name (unique within pipeline)"),
-  configuration: z.record(z.unknown()).describe("Column-type-specific configuration"),
-  position: z.number().int().optional().describe("Position in pipeline (auto-assigned if omitted)"),
-  is_part_of_score: z.boolean().optional().describe("Whether this column contributes to the overall pipeline score"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
 // ── Configure Custom Scoring (PATCH /reports/{report_id}/score-card) ─────
 // NOTE: This endpoint is in the PromptLayer reference docs but NOT in the
 // OpenAPI spec. Tracked as a known exception in scripts/diff-endpoints.ts.
@@ -453,9 +398,83 @@ export const GetWorkflowVersionExecutionResultsArgsSchema = z.object({
 });
 
 
+// ── Get Agent (GET /workflows/{workflow_id_or_name}) ─────────────────────
+
+export const GetWorkflowArgsSchema = z.object({
+  workflow_id_or_name: z.string().describe("Agent ID or name"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+
 export const CreateFolderArgsSchema = z.object({
   name: z.string().describe("Folder name (unique within parent)"),
   parent_id: z.number().int().optional().describe("Parent folder ID (root if omitted)"),
+  workspace_id: z.number().int().optional().describe("Workspace ID"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+// ── Edit Folder (PATCH /api/public/v2/folders/{folder_id}) ───────────────
+// NOTE: Not yet in the OpenAPI spec. Added from backend source (PR #244).
+// Tracked as a known exception in scripts/diff-endpoints.ts.
+
+export const EditFolderArgsSchema = z.object({
+  folder_id: z.number().int().describe("Folder ID to rename"),
+  name: z.string().describe("New folder name (1-255 chars, unique within parent)"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+// ── Get Folder Entities (GET /api/public/v2/folders/entities) ────────────
+// NOTE: Not yet in the OpenAPI spec. Added from backend source.
+// Tracked as a known exception in scripts/diff-endpoints.ts.
+
+const EntityTypeEnum = z.enum([
+  "FOLDER", "PROMPT", "SNIPPET", "WORKFLOW", "DATASET", "REPORT", "AB_TEST", "INPUT_VARIABLE_SET",
+]);
+
+export const GetFolderEntitiesArgsSchema = z.object({
+  folder_id: z.number().int().optional().describe("Folder ID to list (root if omitted)"),
+  filter_type: z.union([EntityTypeEnum, z.array(EntityTypeEnum)]).optional().describe("Entity type(s) to include (default: all)"),
+  search_query: z.string().optional().describe("Search by name (case-insensitive partial match)"),
+  flatten: z.boolean().optional().describe("Flatten nested folder hierarchy (default: false)"),
+  include_metadata: z.boolean().optional().describe("Include entity metadata like latest_version_number (default: false)"),
+  workspace_id: z.number().int().optional().describe("Workspace ID"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+// ── Move Folder Entities (POST /api/public/v2/folders/entities) ──────────
+// NOTE: Not yet in the OpenAPI spec. Added from backend source.
+// Tracked as a known exception in scripts/diff-endpoints.ts.
+
+export const MoveFolderEntitiesArgsSchema = z.object({
+  entities: z.array(z.object({
+    id: z.number().int().describe("Entity ID"),
+    type: EntityTypeEnum.describe("Entity type"),
+  })).describe("Entities to move"),
+  folder_id: z.number().int().optional().describe("Target folder ID (root if omitted)"),
+  workspace_id: z.number().int().optional().describe("Workspace ID"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+// ── Delete Folder Entities (DELETE /api/public/v2/folders/entities) ───────
+// NOTE: Not yet in the OpenAPI spec. Added from backend source.
+// Tracked as a known exception in scripts/diff-endpoints.ts.
+
+export const DeleteFolderEntitiesArgsSchema = z.object({
+  entities: z.array(z.object({
+    id: z.number().int().describe("Entity ID"),
+    type: EntityTypeEnum.describe("Entity type"),
+  })).describe("Entities to delete"),
+  cascade: z.boolean().optional().describe("Delete folder contents recursively (default: false)"),
+  workspace_id: z.number().int().optional().describe("Workspace ID"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+// ── Resolve Folder ID (GET /api/public/v2/folders/resolve-id) ────────────
+// NOTE: Not yet in the OpenAPI spec. Added from backend source.
+// Tracked as a known exception in scripts/diff-endpoints.ts.
+
+export const ResolveFolderIdArgsSchema = z.object({
+  path: z.string().describe("Folder path to resolve (e.g. 'foo/bar')"),
   workspace_id: z.number().int().optional().describe("Workspace ID"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
@@ -476,22 +495,22 @@ export const TOOL_DEFINITIONS = {
   "get-prompt-template": {
     name: "get-prompt-template",
     description:
-      "Retrieve a prompt template by name or ID, with optional version/label selection. " +
-      "Returns the template with provider-formatted llm_kwargs ready for your LLM client. " +
-      "Use input_variables to fill template placeholders. Use label (e.g. 'prod') or version number " +
+      "Retrieve a fully rendered prompt ready to send to an LLM. Fills in input_variables, resolves " +
+      "snippets, and returns provider-formatted parameters. Use label (e.g. 'prod') or version number " +
       "to pin a specific version; defaults to latest. " +
-      "Use get-prompt-template-raw instead if you need unformatted template data for caching or sync.",
+      "WARNING: Snippets are baked into the output — @@@snippet@@@ references are lost. " +
+      "Do NOT use this for editing and re-publishing prompts. Use get-prompt-template-raw instead.",
     inputSchema: GetPromptTemplateArgsSchema,
     annotations: { readOnlyHint: true },
   },
   "get-prompt-template-raw": {
     name: "get-prompt-template-raw",
     description:
-      "Retrieve raw prompt template data without applying input variables or provider formatting. " +
-      "Ideal for GitHub sync, local caching, and template inspection. " +
-      "Set resolve_snippets=false to preserve raw @@@snippet@@@ references. " +
-      "Set include_llm_kwargs=true to include provider-specific format. " +
-      "Use get-prompt-template instead if you need formatted output with filled variables.",
+      "Retrieve prompt template data for inspection or editing. Does not apply input variables. " +
+      "IMPORTANT: Set resolve_snippets=false to preserve @@@snippet_name@@@ references — " +
+      "this is required if you plan to edit and re-publish the prompt, otherwise snippet references " +
+      "will be lost. The response includes a 'snippets' array listing all referenced snippets. " +
+      "Set include_llm_kwargs=true to also get provider-specific parameters.",
     inputSchema: GetPromptTemplateRawArgsSchema,
     annotations: { readOnlyHint: true },
   },
@@ -507,7 +526,9 @@ export const TOOL_DEFINITIONS = {
       "Create a new version of a prompt template. " +
       "Body has two required objects: prompt_template (with prompt_name, tags, folder_id) and " +
       "prompt_version (with prompt_template content in chat/completion format, commit_message, metadata). " +
-      "Optionally assign release_labels.",
+      "Optionally assign release_labels. " +
+      "IMPORTANT: If the prompt uses snippets, preserve @@@snippet_name@@@ markers in the content. " +
+      "Do not inline snippet text — this breaks snippet references.",
     inputSchema: PublishPromptTemplateArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -552,30 +573,6 @@ export const TOOL_DEFINITIONS = {
     inputSchema: LogRequestArgsSchema,
     annotations: { readOnlyHint: false },
   },
-  "track-prompt": {
-    name: "track-prompt",
-    description: "Associate a prompt template with a logged request by request_id.",
-    inputSchema: TrackPromptArgsSchema,
-    annotations: { readOnlyHint: false },
-  },
-  "track-score": {
-    name: "track-score",
-    description: "Assign a score (0-100) to a logged request. Use 'name' for multiple named scores per request.",
-    inputSchema: TrackScoreArgsSchema,
-    annotations: { readOnlyHint: false },
-  },
-  "track-metadata": {
-    name: "track-metadata",
-    description: "Attach metadata key-value pairs to a logged request for search and filtering.",
-    inputSchema: TrackMetadataArgsSchema,
-    annotations: { readOnlyHint: false },
-  },
-  "track-group": {
-    name: "track-group",
-    description: "Associate a logged request with a group.",
-    inputSchema: TrackGroupArgsSchema,
-    annotations: { readOnlyHint: false },
-  },
   "create-spans-bulk": {
     name: "create-spans-bulk",
     description: "Create OpenTelemetry-compatible spans in bulk for distributed tracing. Each span can optionally include a log_request.",
@@ -612,25 +609,25 @@ export const TOOL_DEFINITIONS = {
   // ── Evaluations ─────────────────────────────────────────────────────
   "list-evaluations": {
     name: "list-evaluations",
-    description: "List evaluation pipelines with pagination. Filter by name, status, workspace_id.",
+    description: "List evaluation pipelines (called 'reports' in the API) with pagination. Filter by name, status, workspace_id.",
     inputSchema: ListEvaluationsArgsSchema,
     annotations: { readOnlyHint: true },
   },
   "create-report": {
     name: "create-report",
-    description: "Create an evaluation pipeline linked to a dataset group. Optionally include columns and scoring config.",
+    description: "Create an evaluation pipeline (called 'report' in the API) linked to a dataset group. The recommended approach is to add LLM assertion columns that use a language model to score each row. For all available column types, search the PromptLayer docs or visit https://docs.promptlayer.com/features/evaluations/column-types.",
     inputSchema: CreateReportArgsSchema,
     annotations: { readOnlyHint: false },
   },
   "run-report": {
     name: "run-report",
-    description: "Execute an evaluation pipeline. Runs all columns against the dataset. Name is required.",
+    description: "Execute an evaluation pipeline. Runs all columns against the dataset and produces scores. Name is required.",
     inputSchema: RunReportArgsSchema,
     annotations: { readOnlyHint: false },
   },
   "get-report": {
     name: "get-report",
-    description: "Get evaluation pipeline details. Use get-report-score for the computed score.",
+    description: "Get evaluation pipeline details including columns and configuration. Use get-report-score for the computed score.",
     inputSchema: GetReportArgsSchema,
     annotations: { readOnlyHint: true },
   },
@@ -640,21 +637,15 @@ export const TOOL_DEFINITIONS = {
     inputSchema: GetReportScoreArgsSchema,
     annotations: { readOnlyHint: true },
   },
-  "add-report-column": {
-    name: "add-report-column",
-    description: "Add one evaluation column to a pipeline. One column per request. Column types include PROMPT_TEMPLATE, CODE_EXECUTION, LLM_ASSERTION, COMPARE, etc.",
-    inputSchema: AddReportColumnArgsSchema,
-    annotations: { readOnlyHint: false },
-  },
   "update-report-score-card": {
     name: "update-report-score-card",
-    description: "Configure custom scoring for an evaluation pipeline. Specify column_names and optional custom code.",
+    description: "Configure custom scoring for an evaluation pipeline. Specify which column_names contribute to the score, with optional custom code.",
     inputSchema: UpdateReportScoreCardArgsSchema,
     annotations: { readOnlyHint: false },
   },
   "delete-reports-by-name": {
     name: "delete-reports-by-name",
-    description: "Archive all evaluation pipelines with the given name.",
+    description: "Archive all evaluation pipelines matching the given name.",
     inputSchema: DeleteReportsByNameArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -662,32 +653,38 @@ export const TOOL_DEFINITIONS = {
   // ── Agents / Workflows ──────────────────────────────────────────────
   "list-workflows": {
     name: "list-workflows",
-    description: "List all agents in the workspace with pagination.",
+    description: "List all agents (called 'workflows' in the API) in the workspace with pagination.",
     inputSchema: ListWorkflowsArgsSchema,
     annotations: { readOnlyHint: true },
   },
   "create-workflow": {
     name: "create-workflow",
-    description: "Create a new agent or new version of an existing one. For new: use 'name'. For versioning: use workflow_id or workflow_name.",
+    description: "Create a new agent (called 'workflow' in the API) or a new version of an existing one. For new: use 'name'. For versioning: use workflow_id or workflow_name.",
     inputSchema: CreateWorkflowArgsSchema,
     annotations: { readOnlyHint: false },
   },
   "patch-workflow": {
     name: "patch-workflow",
-    description: "Partially update an agent. Merges node changes into a new version. Set node to null to remove.",
+    description: "Partially update an agent. Merges node changes into a new version. Set a node value to null to remove it.",
     inputSchema: PatchWorkflowArgsSchema,
     annotations: { readOnlyHint: false },
   },
   "run-workflow": {
     name: "run-workflow",
-    description: "Execute an agent by name. Returns 201 with results, or 202 if callback_url is set.",
+    description: "Execute an agent by name. Returns results synchronously, or returns immediately with an execution ID if callback_url is set for async webhook delivery.",
     inputSchema: RunWorkflowArgsSchema,
     annotations: { readOnlyHint: false },
   },
   "get-workflow-version-execution-results": {
     name: "get-workflow-version-execution-results",
-    description: "Poll for agent execution results. Returns 200 when complete, 202 when still running.",
+    description: "Poll for agent execution results by execution ID. Returns results when complete, or indicates still running.",
     inputSchema: GetWorkflowVersionExecutionResultsArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "get-workflow": {
+    name: "get-workflow",
+    description: "Get a single agent (called 'workflow' in the API) by ID or name. Returns the agent details and configuration.",
+    inputSchema: GetWorkflowArgsSchema,
     annotations: { readOnlyHint: true },
   },
 
@@ -697,5 +694,35 @@ export const TOOL_DEFINITIONS = {
     description: "Create a folder for organizing resources. Nest with parent_id. Names unique within parent.",
     inputSchema: CreateFolderArgsSchema,
     annotations: { readOnlyHint: false },
+  },
+  "edit-folder": {
+    name: "edit-folder",
+    description: "Rename a folder. Name must be unique within the parent folder.",
+    inputSchema: EditFolderArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "get-folder-entities": {
+    name: "get-folder-entities",
+    description: "List entities (prompts, agents, datasets, evaluations, folders, etc.) in a folder. Returns root-level entities if folder_id is omitted. Use flatten=true to include all nested contents. Supports search and type filtering.",
+    inputSchema: GetFolderEntitiesArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "move-folder-entities": {
+    name: "move-folder-entities",
+    description: "Move entities (prompts, agents, datasets, evaluations, folders) into a target folder. Omit folder_id to move to workspace root.",
+    inputSchema: MoveFolderEntitiesArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "delete-folder-entities": {
+    name: "delete-folder-entities",
+    description: "Permanently delete entities (prompts, agents, datasets, evaluations, folders). WARNING: This is destructive and cannot be undone. Use cascade=true to recursively delete all folder contents.",
+    inputSchema: DeleteFolderEntitiesArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "resolve-folder-id": {
+    name: "resolve-folder-id",
+    description: "Resolve a folder path (e.g. 'foo/bar') to a folder ID.",
+    inputSchema: ResolveFolderIdArgsSchema,
+    annotations: { readOnlyHint: true },
   },
 } as const;
