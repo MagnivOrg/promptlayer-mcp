@@ -54,6 +54,24 @@ Add to `.cursor/mcp.json`:
 }
 ```
 
+### Remote (Streamable HTTP)
+
+Use the hosted MCP server at `https://mcp.promptlayer.com/mcp` with any client that supports Streamable HTTP transport. Pass your API key via the `Authorization` header:
+
+```json
+{
+  "mcpServers": {
+    "promptlayer": {
+      "type": "streamable-http",
+      "url": "https://mcp.promptlayer.com/mcp",
+      "headers": {
+        "Authorization": "Bearer pl_your_key_here"
+      }
+    }
+  }
+}
+```
+
 ### From source
 
 ```bash
