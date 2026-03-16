@@ -55,6 +55,10 @@ export class PromptLayerClient {
   deletePromptLabel(labelId: number) { return this.del(`/prompt-labels/${labelId}`); }
   getSnippetUsage(id: string, params?: Body) { return this.get(`/prompt-templates/${this.enc(id)}/snippet-usage`, params); }
 
+  // Request Logs
+  searchRequestLogs(body: Body) { return this.post("/api/public/v2/requests/search", body); }
+  getRequest(requestId: number) { return this.get(`/api/public/v2/requests/${requestId}`); }
+
   // Tracking
   logRequest(body: Body) { return this.post("/log-request", body); }
   createSpansBulk(body: Body) { return this.post("/spans-bulk", body); }

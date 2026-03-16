@@ -50,6 +50,13 @@ export function registerAllTools(server: any) {
     (c, a) => { const { api_key: _, identifier, ...p } = a as { identifier: string; api_key?: string } & Args; return c.getSnippetUsage(identifier, p); },
     (r) => `${Array.isArray(r) ? r.length : 0} prompt(s) using snippet`);
 
+  // Request Logs
+  reg(t["search-request-logs"], (c, a) => c.searchRequestLogs(body(a)),
+    (r) => { const { items, total, page, pages } = r as { items?: unknown[]; total?: number; page?: number; pages?: number }; return `${items?.length ?? 0} request(s) (page ${page ?? 1}/${pages ?? 1}, total ${total ?? "?"})`; });
+  reg(t["get-request"],
+    (c, a) => c.getRequest((a as { request_id: number }).request_id),
+    (r) => { const { request_id, model } = r as { request_id?: number; model?: string }; return `Request ${request_id ?? ""}${model ? ` (${model})` : ""} retrieved`; });
+
   // Tracking
   reg(t["log-request"], (c, a) => c.logRequest(body(a)),
     (r) => { const id = (r as { request_id?: unknown }).request_id; return id ? `Logged (ID: ${id})` : "Logged"; });

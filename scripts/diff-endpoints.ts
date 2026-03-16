@@ -105,6 +105,33 @@ const KNOWN_EXCEPTIONS: string[] = [
   // The OpenAPI spec defines scores as object but backend uses a list of {name, operator, value}.
   // Our array type matches what the backend actually accepts.
   'TYPE MISMATCH: POST /api/public/v2/dataset-versions/from-filter-params > "scores": MCP=array, OpenAPI=object [tool: create-dataset-version-from-filter-params]',
+
+  // patch-prompt-template-version exists in the backend and OpenAPI but is not yet implemented
+  // in MCP. Low priority — publish-prompt-template covers most use cases.
+  "MISSING IN MCP: PATCH /rest/prompt-templates/{identifier} (Patch Prompt Template Version)",
+
+  // OTLP trace ingestion endpoint exists in OpenAPI but is not implemented in MCP.
+  // This is a specialized protocol endpoint, not a typical REST API tool.
+  "MISSING IN MCP: POST /v1/traces (Ingest Traces (OTLP))",
+
+  // Semantic search and tags parameters for folder entities are documented in the reference docs
+  // (https://docs.promptlayer.com/reference/list-folder-entities) but not yet in the OpenAPI spec.
+  'EXTRA FIELD: GET /api/public/v2/folders/entities > "semantic_search" not in OpenAPI [tool: get-folder-entities]',
+  'EXTRA FIELD: GET /api/public/v2/folders/entities > "semantic_search_top_k" not in OpenAPI [tool: get-folder-entities]',
+  'EXTRA FIELD: GET /api/public/v2/folders/entities > "semantic_search_threshold" not in OpenAPI [tool: get-folder-entities]',
+  'EXTRA FIELD: GET /api/public/v2/folders/entities > "tags" not in OpenAPI [tool: get-folder-entities]',
+
+  // The OpenAPI spec represents tags as anyOf(string, array) but our Zod union serializes
+  // as "union" vs "union(string,array)". Functionally equivalent.
+  'TYPE MISMATCH: GET /prompt-templates > "tags": MCP=union, OpenAPI=union(string,array) [tool: list-prompt-templates]',
+
+  // filter_type OpenAPI uses oneOf vs our Zod union. Functionally equivalent.
+  'TYPE MISMATCH: GET /api/public/v2/folders/entities > "filter_type": MCP=union, OpenAPI=oneOf [tool: get-folder-entities]',
+
+  // workspace_id is optional in MCP because the API key implicitly provides it.
+  // OpenAPI marks it required but the backend falls back to the API key's workspace.
+  'REQUIRED MISMATCH: GET /api/public/v2/folders/entities > "workspace_id": MCP=false, OpenAPI=true [tool: get-folder-entities]',
+  'REQUIRED MISMATCH: GET /api/public/v2/folders/resolve-id > "workspace_id": MCP=false, OpenAPI=true [tool: resolve-folder-id]',
 ];
 // ─────────────────────────────────────────────────────────────────────────────
 

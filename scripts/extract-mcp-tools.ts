@@ -28,6 +28,8 @@ const TOOL_TO_ENDPOINT: Record<string, { method: string; path: string }> = {
   "move-prompt-label":          { method: "PATCH",  path: "/prompt-labels/{prompt_label_id}" },
   "delete-prompt-label":        { method: "DELETE", path: "/prompt-labels/{prompt_label_id}" },
   "get-snippet-usage":          { method: "GET",    path: "/prompt-templates/{identifier}/snippet-usage" },
+  "search-request-logs":        { method: "POST",   path: "/api/public/v2/requests/search" },
+  "get-request":                { method: "GET",    path: "/api/public/v2/requests/{request_id}" },
   "log-request":                { method: "POST",   path: "/log-request" },
   "create-spans-bulk":          { method: "POST",   path: "/spans-bulk" },
   "list-datasets":              { method: "GET",    path: "/api/public/v2/datasets" },

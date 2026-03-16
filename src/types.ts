@@ -71,6 +71,7 @@ export const ListPromptTemplatesArgsSchema = z.object({
   per_page: z.number().int().optional().describe("Items per page"),
   label: z.string().optional().describe("Filter by release label"),
   name: z.string().optional().describe("Filter by name (case-insensitive partial match)"),
+  tags: z.union([z.string(), z.array(z.string())]).optional().describe("Filter by tag(s). Only templates whose tags contain all specified values are returned."),
   status: z.enum(["active", "deleted", "all"]).optional().describe("Filter by status (default: 'active')"),
   workspace_id: z.number().int().optional().describe("Workspace ID"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
@@ -434,7 +435,11 @@ const EntityTypeEnum = z.enum([
 export const GetFolderEntitiesArgsSchema = z.object({
   folder_id: z.number().int().optional().describe("Folder ID to list (root if omitted)"),
   filter_type: z.union([EntityTypeEnum, z.array(EntityTypeEnum)]).optional().describe("Entity type(s) to include (default: all)"),
-  search_query: z.string().optional().describe("Search by name (case-insensitive partial match)"),
+  search_query: z.string().optional().describe("Search by name (case-insensitive partial match). For prompts, also searches across prompt version content."),
+  semantic_search: z.boolean().optional().describe("Enable semantic (vector) search instead of text matching. Requires search_query to be set. Currently supports prompts and folders."),
+  semantic_search_top_k: z.number().int().optional().describe("Max results from semantic search (default: 100, range: 1-500)"),
+  semantic_search_threshold: z.number().optional().describe("Max distance threshold for semantic search results (range: (0, 2])"),
+  tags: z.array(z.string()).optional().describe("Filter entities by tags (AND logic — all must match). Applies to prompts, workflows, datasets, evaluations."),
   flatten: z.boolean().optional().describe("Flatten nested folder hierarchy (default: false)"),
   include_metadata: z.boolean().optional().describe("Include entity metadata like latest_version_number (default: false)"),
   workspace_id: z.number().int().optional().describe("Workspace ID"),
@@ -476,6 +481,58 @@ export const DeleteFolderEntitiesArgsSchema = z.object({
 export const ResolveFolderIdArgsSchema = z.object({
   path: z.string().describe("Folder path to resolve (e.g. 'foo/bar')"),
   workspace_id: z.number().int().optional().describe("Workspace ID"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+
+// ── Search Request Logs (POST /api/public/v2/requests/search) ────────────
+// NOTE: The StructuredFilter and StructuredFilterGroup schemas use loose types
+// (z.unknown()) for value/filters because the backend validates operator-field
+// compatibility at runtime. This is tracked as a known exception in scripts/diff-endpoints.ts.
+
+const StructuredFilterSchema = z.object({
+  field: z.enum([
+    "pl_id", "prompt_id", "engine", "provider_type", "input_text", "output_text",
+    "prompt_version_number", "input_tokens", "output_tokens", "cost", "latency_ms",
+    "request_start_time", "request_end_time", "status",
+    "is_json", "is_tool_call", "is_plain_text",
+    "tags", "metadata_keys", "metadata", "tool_names",
+    "output", "output_keys", "input_variables", "input_variable_keys",
+  ]).describe("Request log field to filter on"),
+  operator: z.enum([
+    "is", "is_not", "in", "not_in",
+    "contains", "not_contains", "starts_with", "ends_with",
+    "eq", "neq", "gt", "gte", "lt", "lte", "between",
+    "before", "after",
+    "is_true", "is_false", "is_empty", "is_not_empty",
+    "is_null", "is_not_null",
+    "key_equals", "key_not_equals", "key_contains",
+  ]).describe("Filter operator (availability depends on field type)"),
+  value: z.unknown().optional().describe("Filter value (type depends on operator)"),
+  nested_key: z.string().optional().describe("Key name for nested field operators (metadata, output, input_variables)"),
+});
+
+const StructuredFilterGroupSchema: z.ZodType = z.object({
+  logic: z.enum(["AND", "OR"]).optional().describe("Logical operator (default: AND)"),
+  filters: z.array(z.union([StructuredFilterSchema, z.lazy(() => StructuredFilterGroupSchema)])).describe("Filters or nested filter groups"),
+});
+
+export const SearchRequestLogsArgsSchema = z.object({
+  filters: z.array(StructuredFilterSchema).optional().describe("Structured filters (combined with AND logic)"),
+  filter_group: StructuredFilterGroupSchema.optional().describe("Filter group with AND/OR logic, supports nesting"),
+  q: z.string().optional().describe("Free-text search across prompt input and LLM output"),
+  page: z.number().int().optional().describe("Page number (default: 1)"),
+  per_page: z.number().int().optional().describe("Items per page (max: 25)"),
+  sort_by: z.enum(["request_start_time", "input_tokens", "output_tokens", "cost", "latency_ms", "status"]).optional().describe("Sort field"),
+  sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction (must be provided with sort_by)"),
+  include_prompt_name: z.boolean().optional().describe("Include prompt template name in results"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+// ── Get Request (GET /api/public/v2/requests/{request_id}) ───────────────
+
+export const GetRequestArgsSchema = z.object({
+  request_id: z.number().int().describe("Request ID to retrieve"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -560,6 +617,40 @@ export const TOOL_DEFINITIONS = {
     name: "get-snippet-usage",
     description: "Find all prompts that reference a given snippet. Returns prompt names, versions, and labels that use it.",
     inputSchema: GetSnippetUsageArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+
+  // ── Request Logs ──────────────────────────────────────────────────
+  "search-request-logs": {
+    name: "search-request-logs",
+    description:
+      "Search and filter request logs using structured filters, free-text search, and sorting. " +
+      "Rate limited to 10 req/min, max 25 results/page.\n\n" +
+      "FILTER SYNTAX: Each filter is {field, operator, value, nested_key?}.\n" +
+      "Operators by field type:\n" +
+      "  - String fields (engine, provider_type): is, is_not, in, not_in\n" +
+      "  - Text fields (input_text, output_text): contains, not_contains, starts_with, ends_with\n" +
+      "  - Numeric fields (cost, latency_ms, input_tokens, output_tokens): eq, neq, gt, gte, lt, lte, between (value=[min,max]), is_null, is_not_null\n" +
+      "  - Datetime fields (request_start_time, request_end_time): is, before, after, between (value=[start,end] as ISO 8601)\n" +
+      "  - Boolean fields (is_json, is_tool_call, is_plain_text): is_true, is_false\n" +
+      "  - Array fields (tags, metadata_keys, tool_names, output_keys, input_variable_keys): contains, not_contains, in, not_in, is_empty, is_not_empty\n" +
+      "  - Nested fields (metadata, output, input_variables): key_equals, key_not_equals, key_contains, in, not_in, is_empty, is_not_empty — requires nested_key\n\n" +
+      "EXAMPLES:\n" +
+      '  Find GPT-4o requests: {filters: [{field:"engine", operator:"is", value:"gpt-4o"}]}\n' +
+      '  Expensive requests: {filters: [{field:"cost", operator:"gte", value:0.10}]}\n' +
+      '  By metadata: {filters: [{field:"metadata", operator:"key_equals", value:"customer_123", nested_key:"user_id"}]}\n' +
+      '  Free-text search: {q: "refund policy"}\n' +
+      '  Complex AND/OR: {filter_group: {logic:"OR", filters: [{field:"tags", operator:"contains", value:"prod"}, {logic:"AND", filters: [...]}]}}',
+    inputSchema: SearchRequestLogsArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "get-request": {
+    name: "get-request",
+    description:
+      "Retrieve a single request's full payload by ID, returned as a prompt blueprint. " +
+      "Includes the prompt template content, model configuration, provider, token counts, " +
+      "cost, and timing data. Useful for debugging, replaying requests, or extracting data for evaluations.",
+    inputSchema: GetRequestArgsSchema,
     annotations: { readOnlyHint: true },
   },
 
