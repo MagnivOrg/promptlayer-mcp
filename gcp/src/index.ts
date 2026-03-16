@@ -33,6 +33,10 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
   "get-snippet-usage": (c, { api_key: _, identifier, ...p }) =>
     c.getSnippetUsage(identifier as string, p),
 
+  // Request Logs
+  "search-request-logs": (c, a) => c.searchRequestLogs(body(a)),
+  "get-request": (c, { request_id }) => c.getRequest(request_id as number),
+
   // Tracking
   "log-request": (c, a) => c.logRequest(body(a)),
   "create-spans-bulk": (c, a) => c.createSpansBulk(body(a)),
