@@ -69,10 +69,16 @@ export function registerAllTools(server: any) {
   reg(t["create-dataset-group"], (c, a) => c.createDatasetGroup(body(a)), () => "Dataset group created");
   reg(t["create-dataset-version-from-file"], (c, a) => c.createDatasetVersionFromFile(body(a)), () => "Dataset version from file initiated");
   reg(t["create-dataset-version-from-filter-params"], (c, a) => c.createDatasetVersionFromFilterParams(body(a)), () => "Dataset version from history initiated");
+  reg(t["get-dataset-rows"],
+    (c, a) => { const { api_key: _, dataset_id, ...p } = a as { dataset_id: number; api_key?: string } & Args; return c.getDatasetRows(dataset_id, p); },
+    (r) => { const { rows, total, page, pages } = r as { rows?: unknown[]; total?: number; page?: number; pages?: number }; return `${rows?.length ?? 0} row(s) (page ${page ?? 1}/${pages ?? 1}, total ${total ?? "?"})`; });
 
   // Evaluations
   reg(t["list-evaluations"], (c, a) => c.listEvaluations(body(a)),
     (r) => { const { items, total } = r as { items?: unknown[]; total?: number }; return `${items?.length ?? 0} evaluation(s) (total: ${total ?? "?"})`; });
+  reg(t["get-evaluation-rows"],
+    (c, a) => { const { api_key: _, evaluation_id, ...p } = a as { evaluation_id: number; api_key?: string } & Args; return c.getEvaluationRows(evaluation_id, p); },
+    (r) => { const { rows, total, page, pages } = r as { rows?: unknown[]; total?: number; page?: number; pages?: number }; return `${rows?.length ?? 0} row(s) (page ${page ?? 1}/${pages ?? 1}, total ${total ?? "?"})`; });
   reg(t["create-report"], (c, a) => c.createReport(body(a)),
     (r) => { const id = (r as { report_id?: number }).report_id; return id ? `Pipeline created (ID: ${id})` : "Pipeline created"; });
   reg(t["run-report"],

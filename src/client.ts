@@ -65,12 +65,14 @@ export class PromptLayerClient {
 
   // Datasets
   listDatasets(params?: Body) { return this.get("/api/public/v2/datasets", params); }
+  getDatasetRows(id: number, params?: Body) { return this.get(`/api/public/v2/datasets/${id}/rows`, params); }
   createDatasetGroup(body: Body) { return this.post("/api/public/v2/dataset-groups", body); }
   createDatasetVersionFromFile(body: Body) { return this.post("/api/public/v2/dataset-versions/from-file", body); }
   createDatasetVersionFromFilterParams(body: Body) { return this.post("/api/public/v2/dataset-versions/from-filter-params", body); }
 
   // Evaluations
   listEvaluations(params?: Body) { return this.get("/api/public/v2/evaluations", params); }
+  getEvaluationRows(id: number, params?: Body) { return this.get(`/api/public/v2/evaluations/${id}/rows`, params); }
   createReport(body: Body) { return this.post("/reports", body); }
   runReport(id: number, body: Body) { return this.post(`/reports/${id}/run`, body); }
   getReport(id: number) { return this.get(`/reports/${id}`); }
