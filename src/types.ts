@@ -269,6 +269,17 @@ export const CreateDatasetVersionFromFilterParamsArgsSchema = z.object({
 });
 
 
+// ── Get Dataset Rows (GET /api/public/v2/datasets/{dataset_id}/rows) ─────
+
+export const GetDatasetRowsArgsSchema = z.object({
+  dataset_id: z.number().int().describe("The ID of the dataset to retrieve rows from"),
+  workspace_id: z.number().int().optional().describe("Filter by workspace ID"),
+  page: z.number().int().optional().describe("Page number (default: 1)"),
+  per_page: z.number().int().optional().describe("Rows per page (default: 10, max: 100)"),
+  q: z.string().optional().describe("Search query for filtering rows"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
 // ── List Evaluations (GET /api/public/v2/evaluations) ────────────────────
 
 export const ListEvaluationsArgsSchema = z.object({
@@ -277,6 +288,16 @@ export const ListEvaluationsArgsSchema = z.object({
   name: z.string().optional().describe("Filter by name (case-insensitive partial match)"),
   status: z.enum(["active", "deleted", "all"]).optional().describe("Filter by status (default: 'active')"),
   workspace_id: z.number().int().optional().describe("Filter by workspace ID"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+// ── Get Evaluation Rows (GET /api/public/v2/evaluations/{evaluation_id}/rows)
+
+export const GetEvaluationRowsArgsSchema = z.object({
+  evaluation_id: z.number().int().describe("The ID of the evaluation to retrieve rows from"),
+  workspace_id: z.number().int().optional().describe("Filter by workspace ID"),
+  page: z.number().int().optional().describe("Page number (default: 1)"),
+  per_page: z.number().int().optional().describe("Rows per page (default: 10, max: 100)"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -696,12 +717,24 @@ export const TOOL_DEFINITIONS = {
     inputSchema: CreateDatasetVersionFromFilterParamsArgsSchema,
     annotations: { readOnlyHint: false },
   },
+  "get-dataset-rows": {
+    name: "get-dataset-rows",
+    description: "Get paginated rows from a dataset. Each row is an array of cells with {type: 'dataset', value: ...}. Supports search via the q parameter.",
+    inputSchema: GetDatasetRowsArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
 
   // ── Evaluations ─────────────────────────────────────────────────────
   "list-evaluations": {
     name: "list-evaluations",
     description: "List evaluation pipelines (called 'reports' in the API) with pagination. Filter by name, status, workspace_id.",
     inputSchema: ListEvaluationsArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "get-evaluation-rows": {
+    name: "get-evaluation-rows",
+    description: "Get paginated evaluation results with dataset inputs and eval outcomes. Each row has dataset cells ({type: 'dataset', value: ...}) followed by eval cells ({type: 'eval', status: 'PASSED'|'FAILED', value: ...}).",
+    inputSchema: GetEvaluationRowsArgsSchema,
     annotations: { readOnlyHint: true },
   },
   "create-report": {
