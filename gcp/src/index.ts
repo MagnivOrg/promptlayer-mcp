@@ -46,9 +46,13 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
   "create-dataset-group": (c, a) => c.createDatasetGroup(body(a)),
   "create-dataset-version-from-file": (c, a) => c.createDatasetVersionFromFile(body(a)),
   "create-dataset-version-from-filter-params": (c, a) => c.createDatasetVersionFromFilterParams(body(a)),
+  "get-dataset-rows": (c, { api_key: _, dataset_id, ...p }) =>
+    c.getDatasetRows(dataset_id as number, p),
 
   // Evaluations
   "list-evaluations": (c, a) => c.listEvaluations(body(a)),
+  "get-evaluation-rows": (c, { api_key: _, evaluation_id, ...p }) =>
+    c.getEvaluationRows(evaluation_id as number, p),
   "create-report": (c, a) => c.createReport(body(a)),
   "run-report": (c, { api_key: _, report_id, ...b }) =>
     c.runReport(report_id as number, b),
