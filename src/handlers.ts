@@ -110,8 +110,11 @@ export function registerAllTools(server: any) {
     (c, a) => c.getWorkflowVersionExecutionResults(body(a)),
     () => "Execution results retrieved");
   reg(t["get-workflow"],
-    (c, a) => c.getWorkflow((a as { workflow_id_or_name: string }).workflow_id_or_name),
-    (r) => { const w = r as { workflow?: { name?: string } }; return `Agent "${w.workflow?.name ?? ""}" retrieved`; });
+    (c, a) => { const { api_key: _, workflow_id_or_name, ...params } = a as { workflow_id_or_name: string; api_key?: string } & Args; return c.getWorkflow(workflow_id_or_name, params); },
+    (r) => { const w = r as { workflow_name?: string }; return `Agent "${w.workflow_name ?? ""}" retrieved`; });
+  reg(t["get-workflow-labels"],
+    (c, a) => c.getWorkflowLabels((a as { workflow_id_or_name: string }).workflow_id_or_name),
+    (r) => { const labels = (r as { release_labels?: unknown[] }).release_labels; return `${labels?.length ?? 0} label(s) found`; });
 
   // Folders
   reg(t["create-folder"], (c, a) => c.createFolder(body(a)), () => "Folder created");

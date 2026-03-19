@@ -82,7 +82,8 @@ export class PromptLayerClient {
 
   // Agents
   listWorkflows(params?: Body) { return this.get("/workflows", params); }
-  getWorkflow(idOrName: string) { return this.get(`/workflows/${this.enc(idOrName)}`); }
+  getWorkflow(idOrName: string, params?: Body) { return this.get(`/workflows/${this.enc(idOrName)}`, params); }
+  getWorkflowLabels(idOrName: string) { return this.get(`/workflows/${this.enc(idOrName)}/labels`); }
   createWorkflow(body: Body) { return this.post("/rest/workflows", body); }
   patchWorkflow(idOrName: string, body: Body) { return this.patch(`/rest/workflows/${this.enc(idOrName)}`, body); }
   runWorkflow(name: string, body: Body) { return this.post(`/workflows/${this.enc(name)}/run`, body); }

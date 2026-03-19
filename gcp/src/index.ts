@@ -72,8 +72,10 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
     c.runWorkflow(workflow_name as string, b),
   "get-workflow-version-execution-results": (c, a) =>
     c.getWorkflowVersionExecutionResults(body(a)),
-  "get-workflow": (c, { workflow_id_or_name }) =>
-    c.getWorkflow(workflow_id_or_name as string),
+  "get-workflow": (c, { api_key: _, workflow_id_or_name, ...params }) =>
+    c.getWorkflow(workflow_id_or_name as string, params),
+  "get-workflow-labels": (c, { workflow_id_or_name }) =>
+    c.getWorkflowLabels(workflow_id_or_name as string),
 
   // Folders
   "create-folder": (c, a) => c.createFolder(body(a)),

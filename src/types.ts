@@ -228,9 +228,6 @@ export const CreateDatasetVersionFromFileArgsSchema = z.object({
 export const CreateDatasetVersionFromFilterParamsArgsSchema = z.object({
   dataset_group_id: z.number().int().describe("Dataset group ID"),
   variables_to_parse: z.array(z.string()).optional().describe("Variables to extract from request logs"),
-  prompt_id: z.number().int().optional().describe("Filter by prompt template ID"),
-  prompt_version_id: z.number().int().optional().describe("Filter by prompt version ID"),
-  prompt_label_id: z.number().int().optional().describe("Filter by prompt label ID"),
   workspace_id: z.number().int().optional().describe("Workspace ID"),
   tags: z.array(z.string()).optional().describe("Filter by tags (simple tag filter)"),
   metadata: z.record(z.string()).optional().describe("Simple metadata key-value filter"),
@@ -251,7 +248,7 @@ export const CreateDatasetVersionFromFilterParamsArgsSchema = z.object({
     name: z.string().describe("Prompt template name"),
     version_numbers: z.array(z.number().int()).optional().describe("Filter to specific version numbers"),
     labels: z.array(z.string()).optional().describe("Filter to specific labels"),
-  })).optional().describe("Include request logs matching these prompt templates"),
+  })).optional().describe("Include request logs matching these prompt templates. This is the primary way to filter by prompt — use the prompt name (not ID)."),
   prompt_templates_exclude: z.array(z.object({
     name: z.string().describe("Prompt template name"),
     version_numbers: z.array(z.number().int()).optional().describe("Filter to specific version numbers"),
@@ -423,6 +420,15 @@ export const GetWorkflowVersionExecutionResultsArgsSchema = z.object({
 // ── Get Agent (GET /workflows/{workflow_id_or_name}) ─────────────────────
 
 export const GetWorkflowArgsSchema = z.object({
+  workflow_id_or_name: z.string().describe("Agent ID or name"),
+  version: z.number().int().optional().describe("Specific version number (mutually exclusive with label)"),
+  label: z.string().optional().describe("Release label name, e.g. 'prod' (mutually exclusive with version)"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+// ── Get Agent Labels (GET /workflows/{workflow_id_or_name}/labels) ────────
+
+export const GetWorkflowLabelsArgsSchema = z.object({
   workflow_id_or_name: z.string().describe("Agent ID or name"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
@@ -807,8 +813,14 @@ export const TOOL_DEFINITIONS = {
   },
   "get-workflow": {
     name: "get-workflow",
-    description: "Get a single agent (called 'workflow' in the API) by ID or name. Returns the agent details and configuration.",
+    description: "Get a single agent (called 'workflow' in the API) by ID or name. Returns the agent details including full node configuration, edges, and version info. Optionally filter by version number or release label.",
     inputSchema: GetWorkflowArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "get-workflow-labels": {
+    name: "get-workflow-labels",
+    description: "List all release labels for an agent (workflow). Returns each label with its name, ID, and the version it points to.",
+    inputSchema: GetWorkflowLabelsArgsSchema,
     annotations: { readOnlyHint: true },
   },
 
