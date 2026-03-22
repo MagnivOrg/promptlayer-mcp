@@ -20,20 +20,15 @@ This matches every major MCP server (GitHub, Stripe, official reference servers)
 
 ## Input schemas are the source of truth
 
-Every tool's input schema is a Zod object in `src/types.ts`, verified against the PromptLayer OpenAPI spec. Run `npm run sync:check` to detect drift. The check must exit 0.
-
-Known exceptions to the OpenAPI diff are declared in `scripts/diff-endpoints.ts` with inline comments explaining each one. If you add a new exception, also add a `// NOTE:` comment on the affected schema in `src/types.ts`.
+Every tool's input schema is a Zod object in `src/types.ts`. Schemas should match what the backend actually accepts (check `RequestLogFilterParams` and similar Pydantic models), not just the OpenAPI spec which may be outdated.
 
 ## Adding a new endpoint
 
 1. Add Zod schema + entry in `TOOL_DEFINITIONS` in `src/types.ts`
 2. Add client method in `src/client.ts`
 3. Register the tool in `src/handlers.ts`
-4. Add mapping in `scripts/extract-mcp-tools.ts` (`TOOL_TO_ENDPOINT`)
-5. Run `npm run sync:check` -- must exit 0
 
 ## Commands
 
 - `npm run build` -- Compile TypeScript
 - `npm run dev` -- Run with tsx
-- `npm run sync:check` -- Verify schemas match OpenAPI spec (exit 0 = pass)

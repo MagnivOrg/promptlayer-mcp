@@ -56,6 +56,9 @@ export function registerAllTools(server: any) {
   reg(t["get-request"],
     (c, a) => c.getRequest((a as { request_id: number }).request_id),
     (r) => { const { request_id, model } = r as { request_id?: number; model?: string }; return `Request ${request_id ?? ""}${model ? ` (${model})` : ""} retrieved`; });
+  reg(t["get-trace"],
+    (c, a) => c.getTrace(a.trace_id as string),
+    () => "Trace retrieved");
 
   // Tracking
   reg(t["log-request"], (c, a) => c.logRequest(body(a)),

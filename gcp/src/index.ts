@@ -36,6 +36,7 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
   // Request Logs
   "search-request-logs": (c, a) => c.searchRequestLogs(body(a)),
   "get-request": (c, { request_id }) => c.getRequest(request_id as number),
+  "get-trace": (c, { trace_id }) => c.getTrace(trace_id as string),
 
   // Tracking
   "log-request": (c, a) => c.logRequest(body(a)),
