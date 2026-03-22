@@ -284,6 +284,7 @@ export const ListEvaluationsArgsSchema = z.object({
   per_page: z.number().int().optional().describe("Items per page (default: 10)"),
   name: z.string().optional().describe("Filter by name (case-insensitive partial match)"),
   status: z.enum(["active", "deleted", "all"]).optional().describe("Filter by status (default: 'active')"),
+  include_runs: z.boolean().optional().describe("If true, include batch runs nested under each evaluation with status and cell status counts (default: false)"),
   workspace_id: z.number().int().optional().describe("Filter by workspace ID"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
@@ -563,6 +564,13 @@ export const GetRequestArgsSchema = z.object({
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
+// ── Get Trace (GET /api/public/v2/traces/{trace_id}) ─────────────────────
+
+export const GetTraceArgsSchema = z.object({
+  trace_id: z.string().describe("Trace ID to retrieve spans for"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
 
 export type GetPromptTemplateParams = Omit<
   z.infer<typeof GetPromptTemplateArgsSchema>,
@@ -676,8 +684,18 @@ export const TOOL_DEFINITIONS = {
     description:
       "Retrieve a single request's full payload by ID, returned as a prompt blueprint. " +
       "Includes the prompt template content, model configuration, provider, token counts, " +
-      "cost, and timing data. Useful for debugging, replaying requests, or extracting data for evaluations.",
+      "cost, timing data, and trace_id (if the request was part of a trace). " +
+      "Useful for debugging, replaying requests, or extracting data for evaluations.",
     inputSchema: GetRequestArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "get-trace": {
+    name: "get-trace",
+    description:
+      "Retrieve all spans for a given trace ID. Each span includes metadata and, if it generated " +
+      "a request log, the associated request_log_id. Useful for inspecting execution flow across " +
+      "multiple LLM calls in a traced operation.",
+    inputSchema: GetTraceArgsSchema,
     annotations: { readOnlyHint: true },
   },
 
@@ -733,7 +751,7 @@ export const TOOL_DEFINITIONS = {
   // ── Evaluations ─────────────────────────────────────────────────────
   "list-evaluations": {
     name: "list-evaluations",
-    description: "List evaluation pipelines (called 'reports' in the API) with pagination. Filter by name, status, workspace_id.",
+    description: "List evaluation pipelines (called 'reports' in the API) with pagination. Filter by name, status, workspace_id. Set include_runs=true to include batch runs nested under each evaluation.",
     inputSchema: ListEvaluationsArgsSchema,
     annotations: { readOnlyHint: true },
   },
