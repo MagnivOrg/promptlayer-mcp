@@ -49,6 +49,9 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
   "create-dataset-version-from-filter-params": (c, a) => c.createDatasetVersionFromFilterParams(body(a)),
   "get-dataset-rows": (c, { api_key: _, dataset_id, ...p }) =>
     c.getDatasetRows(dataset_id as number, p),
+  "create-draft-dataset-version": (c, a) => c.createDraftDatasetVersion(body(a)),
+  "add-request-log-to-dataset": (c, a) => c.addRequestLogToDatasetVersion(body(a)),
+  "save-draft-dataset-version": (c, a) => c.saveDraftDatasetVersion(body(a)),
 
   // Evaluations
   "list-evaluations": (c, a) => c.listEvaluations(body(a)),

@@ -277,6 +277,29 @@ export const GetDatasetRowsArgsSchema = z.object({
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
+// ── Create Draft Dataset Version (POST /api/public/v2/dataset-versions/create-draft) ─────
+
+export const CreateDraftDatasetVersionArgsSchema = z.object({
+  dataset_group_id: z.number().int().describe("ID of the dataset group to create a draft version for"),
+  source_dataset_id: z.number().int().optional().describe("Optional ID of an existing dataset version to copy rows from. Must belong to the same dataset group."),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+// ── Add Request Log to Draft Dataset (POST /api/public/v2/dataset-versions/add-request-log) ─────
+
+export const AddRequestLogToDatasetVersionArgsSchema = z.object({
+  dataset_group_id: z.number().int().describe("ID of the dataset group containing the draft"),
+  request_log_id: z.number().int().describe("ID of the request log to add as a dataset row"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+// ── Save Draft Dataset Version (POST /api/public/v2/dataset-versions/save-draft) ─────
+
+export const SaveDraftDatasetVersionArgsSchema = z.object({
+  dataset_group_id: z.number().int().describe("ID of the dataset group containing the draft to save"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
 // ── List Evaluations (GET /api/public/v2/evaluations) ────────────────────
 
 export const ListEvaluationsArgsSchema = z.object({
@@ -746,6 +769,24 @@ export const TOOL_DEFINITIONS = {
     description: "Get paginated rows from a dataset. Each row is an array of cells with {type: 'dataset', value: ...}. Supports search via the q parameter.",
     inputSchema: GetDatasetRowsArgsSchema,
     annotations: { readOnlyHint: true },
+  },
+  "create-draft-dataset-version": {
+    name: "create-draft-dataset-version",
+    description: "Create a draft dataset version for a dataset group. Optionally copy rows from an existing version. Only one draft can exist per group.",
+    inputSchema: CreateDraftDatasetVersionArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "add-request-log-to-dataset": {
+    name: "add-request-log-to-dataset",
+    description: "Add a request log as a row to the draft dataset version. Extracts input variables, metadata, scores, tags, prompt, and response. Requires create-draft first.",
+    inputSchema: AddRequestLogToDatasetVersionArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "save-draft-dataset-version": {
+    name: "save-draft-dataset-version",
+    description: "Publish a draft dataset version by assigning it a real version number. Processed asynchronously.",
+    inputSchema: SaveDraftDatasetVersionArgsSchema,
+    annotations: { readOnlyHint: false },
   },
 
   // ── Evaluations ─────────────────────────────────────────────────────

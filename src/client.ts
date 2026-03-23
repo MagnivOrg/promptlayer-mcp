@@ -70,6 +70,9 @@ export class PromptLayerClient {
   createDatasetGroup(body: Body) { return this.post("/api/public/v2/dataset-groups", body); }
   createDatasetVersionFromFile(body: Body) { return this.post("/api/public/v2/dataset-versions/from-file", body); }
   createDatasetVersionFromFilterParams(body: Body) { return this.post("/api/public/v2/dataset-versions/from-filter-params", body); }
+  createDraftDatasetVersion(body: Body) { return this.post("/api/public/v2/dataset-versions/create-draft", body); }
+  addRequestLogToDatasetVersion(body: Body) { return this.post("/api/public/v2/dataset-versions/add-request-log", body); }
+  saveDraftDatasetVersion(body: Body) { return this.post("/api/public/v2/dataset-versions/save-draft", body); }
 
   // Evaluations
   listEvaluations(params?: Body) { return this.get("/api/public/v2/evaluations", params); }
