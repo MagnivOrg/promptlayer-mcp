@@ -59,6 +59,9 @@ export function registerAllTools(server: any) {
   reg(t["get-trace"],
     (c, a) => c.getTrace(a.trace_id as string),
     () => "Trace retrieved");
+  reg(t["get-request-search-suggestions"],
+    (c, a) => c.getRequestSearchSuggestions(body(a)),
+    (r) => { const v = (r as { values?: unknown[] }).values; return `${v?.length ?? 0} suggestion(s)`; });
 
   // Tracking
   reg(t["log-request"], (c, a) => c.logRequest(body(a)),

@@ -59,6 +59,7 @@ export class PromptLayerClient {
   searchRequestLogs(body: Body) { return this.post("/api/public/v2/requests/search", body); }
   getRequest(requestId: number) { return this.get(`/api/public/v2/requests/${requestId}`); }
   getTrace(traceId: string) { return this.get(`/api/public/v2/traces/${traceId}`); }
+  getRequestSearchSuggestions(params: Body) { return this.get("/api/public/v2/requests/suggestions", params); }
 
   // Tracking
   logRequest(body: Body) { return this.post("/log-request", body); }
