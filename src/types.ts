@@ -569,8 +569,7 @@ const StructuredFilterGroupSchema: z.ZodType = z.object({
 });
 
 export const SearchRequestLogsArgsSchema = z.object({
-  filters: z.array(StructuredFilterSchema).optional().describe("Structured filters (combined with AND logic)"),
-  filter_group: StructuredFilterGroupSchema.optional().describe("Filter group with AND/OR logic, supports nesting"),
+  filter_group: StructuredFilterGroupSchema.optional().describe("Filter group with AND/OR logic, supports nesting. Wrap multiple filters in an AND group."),
   q: z.string().optional().describe("Free-text search across prompt input and LLM output"),
   page: z.number().int().optional().describe("Page number (default: 1)"),
   per_page: z.number().int().optional().describe("Items per page (max: 25)"),
@@ -591,6 +590,22 @@ export const GetRequestArgsSchema = z.object({
 
 export const GetTraceArgsSchema = z.object({
   trace_id: z.string().describe("Trace ID to retrieve spans for"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+// ── Get Request Search Suggestions (GET /api/public/v2/requests/suggestions) ──
+
+export const GetRequestSearchSuggestionsArgsSchema = z.object({
+  field: z.enum([
+    "engine", "provider_type", "prompt_id", "prompt", "tags",
+    "metadata_keys", "status", "tool_names", "output_keys",
+    "input_variable_keys", "metadata_values", "output_values",
+    "input_variable_values",
+  ]).describe("The field to get suggestion values for"),
+  prefix: z.string().optional().describe("Prefix to filter suggestions (case-insensitive)"),
+  metadata_key: z.string().optional().describe("Required when field is metadata_values — specifies which metadata key to get values for"),
+  prompt_id: z.number().int().optional().describe("Filter suggestions to a specific prompt template (only used when field is prompt)"),
+  filter_group: z.string().optional().describe("JSON-encoded filter group to scope suggestions to matching requests"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -684,7 +699,7 @@ export const TOOL_DEFINITIONS = {
     description:
       "Search and filter request logs using structured filters, free-text search, and sorting. " +
       "Rate limited to 10 req/min, max 25 results/page.\n\n" +
-      "FILTER SYNTAX: Each filter is {field, operator, value, nested_key?}.\n" +
+      "FILTER SYNTAX: Use filter_group to combine filters with AND/OR logic. Each filter is {field, operator, value, nested_key?}.\n" +
       "Operators by field type:\n" +
       "  - String fields (engine, provider_type): is, is_not, in, not_in\n" +
       "  - Text fields (input_text, output_text): contains, not_contains, starts_with, ends_with\n" +
@@ -694,9 +709,9 @@ export const TOOL_DEFINITIONS = {
       "  - Array fields (tags, metadata_keys, tool_names, output_keys, input_variable_keys): contains, not_contains, in, not_in, is_empty, is_not_empty\n" +
       "  - Nested fields (metadata, output, input_variables): key_equals, key_not_equals, key_contains, in, not_in, is_empty, is_not_empty — requires nested_key\n\n" +
       "EXAMPLES:\n" +
-      '  Find GPT-4o requests: {filters: [{field:"engine", operator:"is", value:"gpt-4o"}]}\n' +
-      '  Expensive requests: {filters: [{field:"cost", operator:"gte", value:0.10}]}\n' +
-      '  By metadata: {filters: [{field:"metadata", operator:"key_equals", value:"customer_123", nested_key:"user_id"}]}\n' +
+      '  Find GPT-4o requests: {filter_group: {logic:"AND", filters: [{field:"engine", operator:"is", value:"gpt-4o"}]}}\n' +
+      '  Expensive requests: {filter_group: {logic:"AND", filters: [{field:"cost", operator:"gte", value:0.10}]}}\n' +
+      '  By metadata: {filter_group: {logic:"AND", filters: [{field:"metadata", operator:"key_equals", value:"customer_123", nested_key:"user_id"}]}}\n' +
       '  Free-text search: {q: "refund policy"}\n' +
       '  Complex AND/OR: {filter_group: {logic:"OR", filters: [{field:"tags", operator:"contains", value:"prod"}, {logic:"AND", filters: [...]}]}}',
     inputSchema: SearchRequestLogsArgsSchema,
@@ -719,6 +734,19 @@ export const TOOL_DEFINITIONS = {
       "a request log, the associated request_log_id. Useful for inspecting execution flow across " +
       "multiple LLM calls in a traced operation.",
     inputSchema: GetTraceArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "get-request-search-suggestions": {
+    name: "get-request-search-suggestions",
+    description:
+      "Get autocomplete suggestions for request log search fields. Returns possible values for a given " +
+      "field, optionally filtered by a prefix string. Useful for building search UIs or discovering " +
+      "available values (e.g. which engines, tags, or metadata keys exist in your logs).\n\n" +
+      "FIELDS: engine, provider_type, prompt_id, prompt, tags, metadata_keys, status, tool_names, " +
+      "output_keys, input_variable_keys, metadata_values, output_values, input_variable_values.\n\n" +
+      "For metadata_values/output_values/input_variable_values, also provide metadata_key to specify which key.\n" +
+      "Rate limited to 10 req/min.",
+    inputSchema: GetRequestSearchSuggestionsArgsSchema,
     annotations: { readOnlyHint: true },
   },
 
