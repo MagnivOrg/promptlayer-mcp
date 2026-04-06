@@ -19,7 +19,6 @@ export const GetPromptTemplateArgsSchema = z.object({
     .min(1)
     .optional()
     .describe("Specific version number (defaults to latest)"),
-  workspace_id: z.number().int().optional().describe("Workspace ID"),
   label: z
     .string()
     .optional()
@@ -73,7 +72,6 @@ export const ListPromptTemplatesArgsSchema = z.object({
   name: z.string().optional().describe("Filter by name (case-insensitive partial match)"),
   tags: z.union([z.string(), z.array(z.string())]).optional().describe("Filter by tag(s). Only templates whose tags contain all specified values are returned."),
   status: z.enum(["active", "deleted", "all"]).optional().describe("Filter by status (default: 'active')"),
-  workspace_id: z.number().int().optional().describe("Workspace ID"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -85,8 +83,7 @@ export const PublishPromptTemplateArgsSchema = z.object({
     prompt_name: z.string().describe("Name of the prompt template"),
     tags: z.array(z.string()).optional().describe("Tags to associate"),
     folder_id: z.number().int().optional().describe("Folder ID to publish into"),
-    workspace_id: z.number().int().optional().describe("Workspace ID"),
-  }).describe("Template metadata: prompt_name (required), tags, folder_id, workspace_id"),
+  }).describe("Template metadata: prompt_name (required), tags, folder_id"),
   prompt_version: z.object({
     prompt_template: z.record(z.unknown()).describe("The template content in chat ({type:'chat', messages:[...]}) or completion format"),
     commit_message: z.string().optional().describe("Commit message (max 72 chars)"),
@@ -201,7 +198,6 @@ export const ListDatasetsArgsSchema = z.object({
   prompt_version_id: z.number().int().optional().describe("Filter by prompt version ID"),
   prompt_label_id: z.number().int().optional().describe("Filter by prompt label ID"),
   report_id: z.number().int().optional().describe("Filter by report ID"),
-  workspace_id: z.number().int().optional().describe("Filter by workspace ID"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -209,7 +205,6 @@ export const ListDatasetsArgsSchema = z.object({
 
 export const CreateDatasetGroupArgsSchema = z.object({
   name: z.string().optional().describe("Dataset group name (unique within workspace). Auto-generated if omitted."),
-  workspace_id: z.number().int().optional().describe("Workspace ID"),
   folder_id: z.number().int().optional().describe("Folder ID to place the dataset group into"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
@@ -228,7 +223,6 @@ export const CreateDatasetVersionFromFileArgsSchema = z.object({
 export const CreateDatasetVersionFromFilterParamsArgsSchema = z.object({
   dataset_group_id: z.number().int().describe("Dataset group ID"),
   variables_to_parse: z.array(z.string()).optional().describe("Variables to extract from request logs"),
-  workspace_id: z.number().int().optional().describe("Workspace ID"),
   tags: z.array(z.string()).optional().describe("Filter by tags (simple tag filter)"),
   metadata: z.record(z.string()).optional().describe("Simple metadata key-value filter"),
   start_time: z.string().optional().describe("Start time filter (ISO 8601)"),
@@ -270,7 +264,6 @@ export const CreateDatasetVersionFromFilterParamsArgsSchema = z.object({
 
 export const GetDatasetRowsArgsSchema = z.object({
   dataset_id: z.number().int().describe("The ID of the dataset to retrieve rows from"),
-  workspace_id: z.number().int().optional().describe("Filter by workspace ID"),
   page: z.number().int().optional().describe("Page number (default: 1)"),
   per_page: z.number().int().optional().describe("Rows per page (default: 10, max: 100)"),
   q: z.string().optional().describe("Search query for filtering rows"),
@@ -308,7 +301,6 @@ export const ListEvaluationsArgsSchema = z.object({
   name: z.string().optional().describe("Filter by name (case-insensitive partial match)"),
   status: z.enum(["active", "deleted", "all"]).optional().describe("Filter by status (default: 'active')"),
   include_runs: z.boolean().optional().describe("If true, include batch runs nested under each evaluation with status and cell status counts (default: false)"),
-  workspace_id: z.number().int().optional().describe("Filter by workspace ID"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -316,7 +308,6 @@ export const ListEvaluationsArgsSchema = z.object({
 
 export const GetEvaluationRowsArgsSchema = z.object({
   evaluation_id: z.number().int().describe("The ID of the evaluation to retrieve rows from"),
-  workspace_id: z.number().int().optional().describe("Filter by workspace ID"),
   page: z.number().int().optional().describe("Page number (default: 1)"),
   per_page: z.number().int().optional().describe("Rows per page (default: 10, max: 100)"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
@@ -461,7 +452,6 @@ export const GetWorkflowLabelsArgsSchema = z.object({
 export const CreateFolderArgsSchema = z.object({
   name: z.string().describe("Folder name (unique within parent)"),
   parent_id: z.number().int().optional().describe("Parent folder ID (root if omitted)"),
-  workspace_id: z.number().int().optional().describe("Workspace ID"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -493,7 +483,6 @@ export const GetFolderEntitiesArgsSchema = z.object({
   tags: z.array(z.string()).optional().describe("Filter entities by tags (AND logic — all must match). Applies to prompts, workflows, datasets, evaluations."),
   flatten: z.boolean().optional().describe("Flatten nested folder hierarchy (default: false)"),
   include_metadata: z.boolean().optional().describe("Include entity metadata like latest_version_number (default: false)"),
-  workspace_id: z.number().int().optional().describe("Workspace ID"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -507,7 +496,6 @@ export const MoveFolderEntitiesArgsSchema = z.object({
     type: EntityTypeEnum.describe("Entity type"),
   })).describe("Entities to move"),
   folder_id: z.number().int().optional().describe("Target folder ID (root if omitted)"),
-  workspace_id: z.number().int().optional().describe("Workspace ID"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -521,7 +509,6 @@ export const DeleteFolderEntitiesArgsSchema = z.object({
     type: EntityTypeEnum.describe("Entity type"),
   })).describe("Entities to delete"),
   cascade: z.boolean().optional().describe("Delete folder contents recursively (default: false)"),
-  workspace_id: z.number().int().optional().describe("Workspace ID"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -531,7 +518,6 @@ export const DeleteFolderEntitiesArgsSchema = z.object({
 
 export const ResolveFolderIdArgsSchema = z.object({
   path: z.string().describe("Folder path to resolve (e.g. 'foo/bar')"),
-  workspace_id: z.number().int().optional().describe("Workspace ID"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -820,7 +806,7 @@ export const TOOL_DEFINITIONS = {
   // ── Evaluations ─────────────────────────────────────────────────────
   "list-evaluations": {
     name: "list-evaluations",
-    description: "List evaluation pipelines (called 'reports' in the API) with pagination. Filter by name, status, workspace_id. Set include_runs=true to include batch runs nested under each evaluation.",
+    description: "List evaluation pipelines (called 'reports' in the API) with pagination. Filter by name, status. Set include_runs=true to include batch runs nested under each evaluation.",
     inputSchema: ListEvaluationsArgsSchema,
     annotations: { readOnlyHint: true },
   },
