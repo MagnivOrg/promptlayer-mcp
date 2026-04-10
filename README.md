@@ -124,8 +124,12 @@ node build/index.js
 | `run-report` | Execute a pipeline. |
 | `get-report` | Get pipeline details. |
 | `get-report-score` | Get the computed score. |
-| `add-report-column` | Add an evaluation step (one per request). |
+| `add-report-column` | Add a single evaluation column to an existing pipeline. |
+| `edit-report-column` | Update a column's type, configuration, name, or position. |
+| `delete-report-column` | Delete a single column from a pipeline. |
 | `update-report-score-card` | Configure custom scoring logic. |
+| `rename-report` | Rename or retag an evaluation pipeline. |
+| `delete-report` | Archive a single pipeline by ID. |
 | `delete-reports-by-name` | Archive pipelines by name. |
 
 ### Agents

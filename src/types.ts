@@ -369,6 +369,53 @@ export const DeleteReportsByNameArgsSchema = z.object({
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
+// ── Delete Report by ID (DELETE /reports/{report_id}) ────────────────────
+
+export const DeleteReportArgsSchema = z.object({
+  report_id: z.number().int().describe("Evaluation pipeline ID to archive"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+// ── Rename Report (PATCH /reports/{report_id}/rename) ────────────────────
+
+export const RenameReportArgsSchema = z.object({
+  report_id: z.number().int().describe("Evaluation pipeline ID to rename"),
+  name: z.string().min(1).max(255).optional().describe("New name for the evaluation pipeline. Provide name, tags, or both."),
+  tags: z.array(z.string()).optional().describe("Replace the pipeline's tags. Pass an empty array to clear them. Provide name, tags, or both."),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+// ── Add Report Column (POST /report-columns) ─────────────────────────────
+
+export const AddReportColumnArgsSchema = z.object({
+  report_id: z.number().int().describe("Evaluation pipeline ID to add the column to"),
+  column_type: z.string().describe("Column type (e.g. LLM_ASSERTION, CODE_EXECUTION, PROMPT_TEMPLATE). See https://docs.promptlayer.com/features/evaluations/column-types"),
+  name: z.string().min(1).describe("Unique column name within the pipeline"),
+  configuration: z.record(z.unknown()).describe("Column-type-specific configuration"),
+  position: z.number().int().positive().optional().describe("Position in the pipeline (auto-assigned if omitted). Cannot overwrite dataset columns."),
+  is_part_of_score: z.boolean().optional().describe("Whether this column contributes to the score (default false)"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+// ── Edit Report Column (PATCH /report-columns/{report_column_id}) ────────
+
+export const EditReportColumnArgsSchema = z.object({
+  report_column_id: z.number().int().describe("Report column ID to edit"),
+  report_id: z.number().int().describe("Parent evaluation pipeline ID (must match the column's report)"),
+  column_type: z.string().describe("Column type (e.g. LLM_ASSERTION, CODE_EXECUTION, PROMPT_TEMPLATE). DATASET is not allowed."),
+  configuration: z.record(z.unknown()).optional().describe("Replacement column configuration"),
+  name: z.string().min(1).optional().describe("New column name (must be unique within the pipeline)"),
+  position: z.number().int().positive().optional().describe("New position. Cannot overwrite dataset columns."),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+// ── Delete Report Column (DELETE /report-columns/{report_column_id}) ─────
+
+export const DeleteReportColumnArgsSchema = z.object({
+  report_column_id: z.number().int().describe("Report column ID to delete. Cannot be a DATASET column."),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
 
 // ── List Agents (GET /workflows) ─────────────────────────────────────────
 
@@ -850,6 +897,36 @@ export const TOOL_DEFINITIONS = {
     name: "delete-reports-by-name",
     description: "Archive all evaluation pipelines matching the given name.",
     inputSchema: DeleteReportsByNameArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "delete-report": {
+    name: "delete-report",
+    description: "Archive a single evaluation pipeline by ID. Prefer this over delete-reports-by-name when you have the report_id, since names can collide.",
+    inputSchema: DeleteReportArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "rename-report": {
+    name: "rename-report",
+    description: "Rename or retag an evaluation pipeline. Provide name, tags, or both. Use this instead of recreating a misnamed pipeline.",
+    inputSchema: RenameReportArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "add-report-column": {
+    name: "add-report-column",
+    description: "Add a single column to an existing evaluation pipeline. Use this to extend a pipeline incrementally instead of recreating the entire report. Column names must be unique within the pipeline. For column types and configuration, see https://docs.promptlayer.com/features/evaluations/column-types.",
+    inputSchema: AddReportColumnArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "edit-report-column": {
+    name: "edit-report-column",
+    description: "Update an existing evaluation column's type, configuration, name, or position. Use this to fix a bug in a CODE_EXECUTION script or change a column's settings without recreating the whole pipeline. Cannot edit DATASET columns.",
+    inputSchema: EditReportColumnArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "delete-report-column": {
+    name: "delete-report-column",
+    description: "Delete a single column from an evaluation pipeline. Cannot delete DATASET columns. Surrounding columns shift left to fill the gap.",
+    inputSchema: DeleteReportColumnArgsSchema,
     annotations: { readOnlyHint: false },
   },
 

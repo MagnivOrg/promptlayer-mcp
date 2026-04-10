@@ -65,8 +65,16 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
   "get-report-score": (c, { report_id }) => c.getReportScore(report_id as number),
   "update-report-score-card": (c, { api_key: _, report_id, ...b }) =>
     c.updateReportScoreCard(report_id as number, b),
+  "rename-report": (c, { api_key: _, report_id, ...b }) =>
+    c.renameReport(report_id as number, b),
+  "delete-report": (c, { report_id }) => c.deleteReport(report_id as number),
   "delete-reports-by-name": (c, { report_name }) =>
     c.deleteReportsByName(report_name as string),
+  "add-report-column": (c, a) => c.addReportColumn(body(a)),
+  "edit-report-column": (c, { api_key: _, report_column_id, ...b }) =>
+    c.editReportColumn(report_column_id as number, b),
+  "delete-report-column": (c, { report_column_id }) =>
+    c.deleteReportColumn(report_column_id as number),
 
   // Agents
   "list-workflows": (c, a) => c.listWorkflows(body(a)),
