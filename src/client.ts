@@ -83,7 +83,12 @@ export class PromptLayerClient {
   getReport(id: number) { return this.get(`/reports/${id}`); }
   getReportScore(id: number) { return this.get(`/reports/${id}/score`); }
   updateReportScoreCard(id: number, body: Body) { return this.patch(`/reports/${id}/score-card`, body); }
+  renameReport(id: number, body: Body) { return this.patch(`/reports/${id}/rename`, body); }
+  deleteReport(id: number) { return this.del(`/reports/${id}`); }
   deleteReportsByName(name: string) { return this.del(`/reports/name/${this.enc(name)}`); }
+  addReportColumn(body: Body) { return this.post("/report-columns", body); }
+  editReportColumn(id: number, body: Body) { return this.patch(`/report-columns/${id}`, body); }
+  deleteReportColumn(id: number) { return this.del(`/report-columns/${id}`); }
 
   // Agents
   listWorkflows(params?: Body) { return this.get("/workflows", params); }

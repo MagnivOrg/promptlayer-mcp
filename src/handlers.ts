@@ -105,6 +105,20 @@ export function registerAllTools(server: any) {
   reg(t["delete-reports-by-name"],
     (c, a) => c.deleteReportsByName((a as { report_name: string }).report_name),
     () => "Reports archived");
+  reg(t["delete-report"],
+    (c, a) => c.deleteReport((a as { report_id: number }).report_id),
+    () => "Evaluation pipeline archived");
+  reg(t["rename-report"],
+    (c, a) => { const { api_key: _, report_id, ...b } = a as { report_id: number; api_key?: string } & Args; return c.renameReport(report_id, b); },
+    () => "Evaluation pipeline updated");
+  reg(t["add-report-column"], (c, a) => c.addReportColumn(body(a)),
+    (r) => { const id = (r as { report_column?: { id?: number } }).report_column?.id; return id ? `Column added (ID: ${id})` : "Column added"; });
+  reg(t["edit-report-column"],
+    (c, a) => { const { api_key: _, report_column_id, ...b } = a as { report_column_id: number; api_key?: string } & Args; return c.editReportColumn(report_column_id, b); },
+    () => "Column updated");
+  reg(t["delete-report-column"],
+    (c, a) => c.deleteReportColumn((a as { report_column_id: number }).report_column_id),
+    () => "Column deleted");
 
   // Agents
   reg(t["list-workflows"], (c, a) => c.listWorkflows(body(a)), () => "Agents listed");
