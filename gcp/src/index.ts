@@ -90,6 +90,14 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
   "get-workflow-labels": (c, { workflow_id_or_name }) =>
     c.getWorkflowLabels(workflow_id_or_name as string),
 
+  // Tool Registry
+  "list-tool-registries": (c) => c.listToolRegistries(),
+  "get-tool-registry": (c, { api_key: _, identifier, ...p }) =>
+    c.getToolRegistry(identifier as string, p),
+  "create-tool-registry": (c, a) => c.createToolRegistry(body(a)),
+  "create-tool-version": (c, { api_key: _, identifier, ...b }) =>
+    c.createToolVersion(identifier as string, b),
+
   // Folders
   "create-folder": (c, a) => c.createFolder(body(a)),
   "edit-folder": (c, { api_key: _, folder_id, ...b }) =>

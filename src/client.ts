@@ -99,6 +99,12 @@ export class PromptLayerClient {
   runWorkflow(name: string, body: Body) { return this.post(`/workflows/${this.enc(name)}/run`, body); }
   getWorkflowVersionExecutionResults(params: Body) { return this.get("/workflow-version-execution-results", params); }
 
+  // Tool Registry
+  listToolRegistries() { return this.get("/api/public/v2/tool-registry"); }
+  getToolRegistry(identifier: string, params?: Body) { return this.get(`/api/public/v2/tool-registry/${this.enc(identifier)}`, params); }
+  createToolRegistry(body: Body) { return this.post("/api/public/v2/tool-registry", body); }
+  createToolVersion(identifier: string, body: Body) { return this.post(`/api/public/v2/tool-registry/${this.enc(identifier)}/versions`, body); }
+
   // Folders
   createFolder(body: Body) { return this.post("/api/public/v2/folders", body); }
   editFolder(folderId: number, body: Body) { return this.patch(`/api/public/v2/folders/${folderId}`, body); }

@@ -496,6 +496,34 @@ export const GetWorkflowLabelsArgsSchema = z.object({
 });
 
 
+// ── Tool Registry ────────────────────────────────────────────────────
+
+export const ListToolRegistriesArgsSchema = z.object({
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const GetToolRegistryArgsSchema = z.object({
+  identifier: z.string().describe("Tool ID (numeric) or name"),
+  label: z.string().optional().describe("Resolve version by label name (e.g. 'production')"),
+  version: z.number().int().optional().describe("Resolve by specific version number"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const CreateToolRegistryArgsSchema = z.object({
+  name: z.string().describe("Tool name (unique per workspace)"),
+  tool_definition: z.record(z.unknown()).describe("Tool definition in OpenAI function-calling format: {type: 'function', function: {name, description, parameters}}"),
+  folder_id: z.number().int().optional().describe("Folder ID to place tool in"),
+  commit_message: z.string().optional().describe("Commit message for the initial version"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const CreateToolVersionArgsSchema = z.object({
+  identifier: z.string().describe("Tool ID (numeric) or name"),
+  tool_definition: z.record(z.unknown()).describe("Updated tool definition in OpenAI function-calling format"),
+  commit_message: z.string().optional().describe("Commit message describing what changed"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
 export const CreateFolderArgsSchema = z.object({
   name: z.string().describe("Folder name (unique within parent)"),
   parent_id: z.number().int().optional().describe("Parent folder ID (root if omitted)"),
@@ -972,6 +1000,32 @@ export const TOOL_DEFINITIONS = {
     description: "List all release labels for an agent (workflow). Returns each label with its name, ID, and the version it points to.",
     inputSchema: GetWorkflowLabelsArgsSchema,
     annotations: { readOnlyHint: true },
+  },
+
+  // ── Tool Registry ───────────────────────────────────────────────────
+  "list-tool-registries": {
+    name: "list-tool-registries",
+    description: "List all tools in the Tool Registry for the workspace. Returns tool names, IDs, and metadata.",
+    inputSchema: ListToolRegistriesArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "get-tool-registry": {
+    name: "get-tool-registry",
+    description: "Get a tool from the Tool Registry by ID or name. Optionally resolve a specific version by label or version number. Returns the tool definition and metadata.",
+    inputSchema: GetToolRegistryArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "create-tool-registry": {
+    name: "create-tool-registry",
+    description: "Create a new tool in the Tool Registry with an initial version. The tool definition should be in OpenAI function-calling format.",
+    inputSchema: CreateToolRegistryArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "create-tool-version": {
+    name: "create-tool-version",
+    description: "Create a new version of an existing tool in the Tool Registry. Each version is immutable — this adds a new version with the updated definition.",
+    inputSchema: CreateToolVersionArgsSchema,
+    annotations: { readOnlyHint: false },
   },
 
   // ── Folders ─────────────────────────────────────────────────────────
