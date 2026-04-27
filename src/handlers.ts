@@ -139,6 +139,18 @@ export function registerAllTools(server: any) {
     (c, a) => c.getWorkflowLabels((a as { workflow_id_or_name: string }).workflow_id_or_name),
     (r) => { const labels = (r as { release_labels?: unknown[] }).release_labels; return `${labels?.length ?? 0} label(s) found`; });
 
+  // Tool Registry
+  reg(t["list-tool-registries"], (c) => c.listToolRegistries(),
+    (r) => { const tools = (r as { tool_registries?: unknown[] }).tool_registries; return `${tools?.length ?? 0} tool(s)`; });
+  reg(t["get-tool-registry"],
+    (c, a) => { const { api_key: _, identifier, ...p } = a as { identifier: string; api_key?: string } & Args; return c.getToolRegistry(identifier, p); },
+    (r) => { const t_ = (r as { tool_registry?: { name?: string } }).tool_registry; return `Tool "${t_?.name ?? ""}" retrieved`; });
+  reg(t["create-tool-registry"], (c, a) => c.createToolRegistry(body(a)),
+    (r) => { const t_ = (r as { tool_registry?: { name?: string; id?: number } }).tool_registry; return t_ ? `Tool "${t_.name}" created (ID: ${t_.id})` : "Tool created"; });
+  reg(t["create-tool-version"],
+    (c, a) => { const { api_key: _, identifier, ...b } = a as { identifier: string; api_key?: string } & Args; return c.createToolVersion(identifier, b); },
+    (r) => { const v = (r as { version?: { number?: number } }).version; return v ? `Version ${v.number} created` : "Version created"; });
+
   // Folders
   reg(t["create-folder"], (c, a) => c.createFolder(body(a)), () => "Folder created");
   reg(t["edit-folder"],
