@@ -1,6 +1,6 @@
 # PromptLayer MCP Server
 
-MCP server that wraps the [PromptLayer REST API](https://docs.promptlayer.com/reference/rest-api-reference), giving any MCP-compatible client access to all 33 PromptLayer tools.
+MCP server that wraps the [PromptLayer REST API](https://docs.promptlayer.com/reference/rest-api-reference), giving any MCP-compatible client access to all 53 PromptLayer tools.
 
 ## Setup
 
@@ -95,6 +95,15 @@ node build/index.js
 | `delete-prompt-label` | Delete a label. |
 | `get-snippet-usage` | Find all templates referencing a snippet. |
 
+### Tool Registry
+
+| Tool | Description |
+|---|---|
+| `list-tool-registries` | List all tools in the workspace. |
+| `get-tool-registry` | Get a tool by ID or name. Optionally resolve a specific version by label or version number. |
+| `create-tool-registry` | Create a new tool with an initial version. |
+| `create-tool-version` | Create a new version of an existing tool with an updated definition. |
+
 ### Tracking
 
 | Tool | Description |
@@ -105,21 +114,30 @@ node build/index.js
 | `track-metadata` | Attach metadata to a logged request. |
 | `track-group` | Associate a request with a group. |
 | `create-spans-bulk` | Create OpenTelemetry spans in bulk for tracing. |
+| `search-request-logs` | Search request logs with filters. |
+| `get-request` | Get a single request by ID. |
+| `get-trace` | Get a trace by ID. |
+| `get-request-search-suggestions` | Get filter suggestions for request log search. |
 
 ### Datasets
 
 | Tool | Description |
 |---|---|
 | `list-datasets` | List datasets with filtering. |
+| `get-dataset-rows` | Get rows from a dataset version. |
 | `create-dataset-group` | Create a dataset group (container for versions). |
 | `create-dataset-version-from-file` | Create a version from base64 CSV/JSON. |
 | `create-dataset-version-from-filter-params` | Create a version from request log history. |
+| `create-draft-dataset-version` | Create a draft dataset version for incremental building. |
+| `add-request-log-to-dataset` | Add a request log entry to a draft dataset version. |
+| `save-draft-dataset-version` | Finalize and save a draft dataset version. |
 
 ### Evaluations
 
 | Tool | Description |
 |---|---|
 | `list-evaluations` | List evaluation pipelines. |
+| `get-evaluation-rows` | Get rows from an evaluation run. |
 | `create-report` | Create an evaluation pipeline on a dataset. |
 | `run-report` | Execute a pipeline. |
 | `get-report` | Get pipeline details. |
@@ -137,16 +155,23 @@ node build/index.js
 | Tool | Description |
 |---|---|
 | `list-workflows` | List all agents. |
+| `get-workflow` | Get an agent by ID or name with optional version or label filter. |
+| `get-workflow-labels` | List release labels on an agent. |
 | `create-workflow` | Create an agent or new version. |
 | `patch-workflow` | Partially update an agent. |
 | `run-workflow` | Execute an agent by name. |
 | `get-workflow-version-execution-results` | Poll for execution results. |
 
-### Other
+### Folders
 
 | Tool | Description |
 |---|---|
 | `create-folder` | Create a folder for organizing resources. |
+| `edit-folder` | Rename a folder. |
+| `get-folder-entities` | List entities in a folder. Supports search, type filtering, flatten. |
+| `move-folder-entities` | Move entities into a target folder. |
+| `delete-folder-entities` | Permanently delete entities (prompts, agents, tools, datasets, etc.). |
+| `resolve-folder-id` | Resolve a folder path to a folder ID. |
 
 ## Keeping in Sync
 
@@ -171,7 +196,7 @@ npm run watch     # Watch mode
 ```
 src/
   index.ts      # Entry point, starts MCP server
-  types.ts      # Zod schemas + TOOL_DEFINITIONS for all 33 tools
+  types.ts      # Zod schemas + TOOL_DEFINITIONS for all tools
   client.ts     # HTTP client for PromptLayer API
   handlers.ts   # Registers all tools with the MCP server
   utils.ts      # Shared utilities (query params, error handling, handler factory)
