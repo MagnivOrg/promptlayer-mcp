@@ -1,6 +1,6 @@
 # PromptLayer MCP Server
 
-MCP server that wraps the [PromptLayer REST API](https://docs.promptlayer.com/reference/rest-api-reference), giving any MCP-compatible client access to all 53 PromptLayer tools.
+MCP server that wraps the [PromptLayer REST API](https://docs.promptlayer.com/reference/rest-api-reference), giving any MCP-compatible client access to all 60 PromptLayer tools.
 
 ## Setup
 
@@ -94,6 +94,7 @@ node build/index.js
 | `move-prompt-label` | Move a label to a different version. |
 | `delete-prompt-label` | Delete a label. |
 | `get-snippet-usage` | Find all templates referencing a snippet. |
+| `patch-prompt-template-version` | Partially update a template — applies field-level patches and creates a new version. |
 
 ### Tool Registry
 
@@ -109,15 +110,12 @@ node build/index.js
 | Tool | Description |
 |---|---|
 | `log-request` | Log an LLM request/response pair. Input/output in Prompt Blueprint format. |
-| `track-prompt` | Link a logged request to a prompt template. |
-| `track-score` | Score a logged request (0-100). Supports named scores. |
-| `track-metadata` | Attach metadata to a logged request. |
-| `track-group` | Associate a request with a group. |
 | `create-spans-bulk` | Create OpenTelemetry spans in bulk for tracing. |
 | `search-request-logs` | Search request logs with filters. |
 | `get-request` | Get a single request by ID. |
 | `get-trace` | Get a trace by ID. |
 | `get-request-search-suggestions` | Get filter suggestions for request log search. |
+| `get-request-analytics` | Aggregated analytics across request logs (totals, time series, latency percentiles, model/prompt breakdowns). Same filter shape as `search-request-logs`. |
 
 ### Datasets
 
@@ -172,6 +170,16 @@ node build/index.js
 | `move-folder-entities` | Move entities into a target folder. |
 | `delete-folder-entities` | Permanently delete entities (prompts, agents, tools, datasets, etc.). |
 | `resolve-folder-id` | Resolve a folder path to a folder ID. |
+
+### Skill Collections
+
+| Tool | Description |
+|---|---|
+| `list-skill-collections` | List all skill collections in the workspace. |
+| `create-skill-collection` | Create a new skill collection with optional initial files (`{path, content}`). |
+| `get-skill-collection` | Fetch a collection by UUID/name/root_path with file contents. Pin via `version` or `label`. |
+| `update-skill-collection` | Rename a collection or update its description. |
+| `save-skill-collection-version` | Save a new version. Use `file_updates`, `moves`, `deletes`; optionally attach a `release_label`. |
 
 ## Keeping in Sync
 

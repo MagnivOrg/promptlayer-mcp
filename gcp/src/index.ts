@@ -32,12 +32,15 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
     c.deletePromptLabel(prompt_label_id as number),
   "get-snippet-usage": (c, { api_key: _, identifier, ...p }) =>
     c.getSnippetUsage(identifier as string, p),
+  "patch-prompt-template-version": (c, { api_key: _, identifier, ...b }) =>
+    c.patchPromptTemplateVersion(identifier as string, b),
 
   // Request Logs
   "search-request-logs": (c, a) => c.searchRequestLogs(body(a)),
   "get-request": (c, { request_id }) => c.getRequest(request_id as number),
   "get-trace": (c, { trace_id }) => c.getTrace(trace_id as string),
   "get-request-search-suggestions": (c, a) => c.getRequestSearchSuggestions(body(a)),
+  "get-request-analytics": (c, a) => c.getRequestAnalytics(body(a)),
 
   // Tracking
   "log-request": (c, a) => c.logRequest(body(a)),
@@ -106,6 +109,16 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
   "move-folder-entities": (c, a) => c.moveFolderEntities(body(a)),
   "delete-folder-entities": (c, a) => c.deleteFolderEntities(body(a)),
   "resolve-folder-id": (c, a) => c.resolveFolderId(body(a)),
+
+  // Skill Collections
+  "list-skill-collections": (c) => c.listSkillCollections(),
+  "create-skill-collection": (c, a) => c.createSkillCollection(body(a)),
+  "get-skill-collection": (c, { api_key: _, identifier, ...p }) =>
+    c.getSkillCollection(identifier as string, p),
+  "update-skill-collection": (c, { api_key: _, identifier, ...b }) =>
+    c.updateSkillCollection(identifier as string, b),
+  "save-skill-collection-version": (c, { api_key: _, identifier, ...b }) =>
+    c.saveSkillCollectionVersion(identifier as string, b),
 };
 
 // ── Instructions ────────────────────────────────────────────────────────────
