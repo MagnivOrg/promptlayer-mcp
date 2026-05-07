@@ -112,4 +112,23 @@ export class PromptLayerClient {
   moveFolderEntities(body: Body) { return this.post("/api/public/v2/folders/entities", body); }
   deleteFolderEntities(body: Body) { return this.request("/api/public/v2/folders/entities", { method: "DELETE", body: JSON.stringify(body) }); }
   resolveFolderId(params: Body) { return this.get("/api/public/v2/folders/resolve-id", params); }
+
+  // Skill Collections
+  listSkillCollections() { return this.get("/api/public/v2/skill-collections"); }
+  createSkillCollection(body: Body) { return this.post("/api/public/v2/skill-collections", body); }
+  getSkillCollection(identifier: string, params?: Body) { return this.get(`/api/public/v2/skill-collections/${this.enc(identifier)}`, params); }
+  updateSkillCollection(identifier: string, body: Body) { return this.patch(`/api/public/v2/skill-collections/${this.enc(identifier)}`, body); }
+  saveSkillCollectionVersion(identifier: string, body: Body) { return this.post(`/api/public/v2/skill-collections/${this.enc(identifier)}/versions`, body); }
+
+  // Analytics
+  getRequestAnalytics(body: Body) { return this.post("/api/public/v2/requests/analytics", body); }
+
+  // Prompt template patch
+  patchPromptTemplateVersion(identifier: string, body: Body) { return this.patch(`/rest/prompt-templates/${this.enc(identifier)}`, body); }
+
+  // Legacy tracking
+  trackPrompt(body: Body) { return this.post("/rest/track-prompt", body); }
+  trackScore(body: Body) { return this.post("/rest/track-score", body); }
+  trackMetadata(body: Body) { return this.post("/rest/track-metadata", body); }
+  trackGroup(body: Body) { return this.post("/rest/track-group", body); }
 }

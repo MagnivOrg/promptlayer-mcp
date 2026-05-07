@@ -164,4 +164,34 @@ export function registerAllTools(server: any) {
     (r) => { const c_ = (r as { moved_count?: number }).moved_count; return `Deleted ${c_ ?? 0} entity/entities`; });
   reg(t["resolve-folder-id"], (c, a) => c.resolveFolderId(body(a)),
     (r) => { const id = (r as { id?: number }).id; return id ? `Folder ID: ${id}` : "Folder not found"; });
+
+  // Skill Collections
+  reg(t["list-skill-collections"], (c) => c.listSkillCollections(),
+    (r) => { const cs = (r as { skill_collections?: unknown[] }).skill_collections; return `${cs?.length ?? 0} skill collection(s)`; });
+  reg(t["create-skill-collection"], (c, a) => c.createSkillCollection(body(a)),
+    (r) => { const s = (r as { skill_collection?: { name?: string; id?: string } }).skill_collection; return s ? `Skill collection "${s.name}" created (ID: ${s.id})` : "Skill collection created"; });
+  reg(t["get-skill-collection"],
+    (c, a) => { const { api_key: _, identifier, ...p } = a as { identifier: string; api_key?: string } & Args; return c.getSkillCollection(identifier, p); },
+    (r) => { const s = (r as { skill_collection?: { name?: string }; version?: { version_number?: number } }); const name = s.skill_collection?.name ?? ""; const v = s.version?.version_number; return v !== undefined ? `Skill collection "${name}" v${v} retrieved` : `Skill collection "${name}" retrieved`; });
+  reg(t["update-skill-collection"],
+    (c, a) => { const { api_key: _, identifier, ...b } = a as { identifier: string; api_key?: string } & Args; return c.updateSkillCollection(identifier, b); },
+    () => "Skill collection updated");
+  reg(t["save-skill-collection-version"],
+    (c, a) => { const { api_key: _, identifier, ...b } = a as { identifier: string; api_key?: string } & Args; return c.saveSkillCollectionVersion(identifier, b); },
+    (r) => { const v = (r as { version?: { version_number?: number } }).version?.version_number; return v !== undefined ? `Version ${v} saved` : "Version saved"; });
+
+  // Analytics
+  reg(t["get-request-analytics"], (c, a) => c.getRequestAnalytics(body(a)),
+    (r) => { const x = r as { totalRequests?: number; totalCost?: number }; const reqs = x.totalRequests ?? 0; const cost = x.totalCost; return cost !== undefined ? `${reqs} request(s), $${cost} total cost` : `${reqs} request(s) analyzed`; });
+
+  // Prompt template patch
+  reg(t["patch-prompt-template-version"],
+    (c, a) => { const { api_key: _, identifier, ...b } = a as { identifier: string; api_key?: string } & Args; return c.patchPromptTemplateVersion(identifier, b); },
+    (r) => { const v = (r as { version_number?: number }).version_number; return v !== undefined ? `Patched — new version ${v} created` : "Patched — new version created"; });
+
+  // Legacy tracking
+  reg(t["track-prompt"], (c, a) => c.trackPrompt(body(a)), () => "Prompt tracked");
+  reg(t["track-score"], (c, a) => c.trackScore(body(a)), () => "Score tracked");
+  reg(t["track-metadata"], (c, a) => c.trackMetadata(body(a)), () => "Metadata tracked");
+  reg(t["track-group"], (c, a) => c.trackGroup(body(a)), () => "Group tracked");
 }

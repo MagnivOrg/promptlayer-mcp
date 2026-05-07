@@ -617,6 +617,124 @@ export const ResolveFolderIdArgsSchema = z.object({
 });
 
 
+// ── Skill Collections ────────────────────────────────────────────────────
+// Public API endpoints under /api/public/v2/skill-collections.
+// MCP supports JSON bodies only (multipart/form-data with ZIP archive uploads
+// is intentionally not exposed — agents should send file contents inline).
+
+export const ListSkillCollectionsArgsSchema = z.object({
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+const SkillCollectionFileSchema = z.object({
+  path: z.string().describe("Relative file path inside the collection (e.g. 'README.md', 'src/util.ts')"),
+  content: z.string().optional().describe("File contents as a string. Defaults to empty string if omitted."),
+});
+
+export const CreateSkillCollectionArgsSchema = z.object({
+  name: z.string().describe("Collection name. Must be a valid root folder name (will be made unique within the workspace)."),
+  description: z.string().optional().describe("Optional human-readable description"),
+  folder_id: z.number().int().optional().describe("Folder ID to place the collection into"),
+  provider: z.string().optional().describe("Provider hint (e.g. 'claude', 'cursor'). Auto-detected from file paths if omitted."),
+  files: z.array(SkillCollectionFileSchema).optional().describe("Initial files for the collection. Each item is {path, content}."),
+  commit_message: z.string().optional().describe("Commit message for the initial version"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const GetSkillCollectionArgsSchema = z.object({
+  identifier: z.string().describe("Skill collection UUID, name, or root_path"),
+  label: z.string().optional().describe("Release label to pin the version (mutually exclusive with version)"),
+  version: z.number().int().min(1).optional().describe("Version number to pin (mutually exclusive with label)"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const UpdateSkillCollectionArgsSchema = z.object({
+  identifier: z.string().describe("Skill collection UUID, name, or root_path"),
+  name: z.string().optional().describe("New collection name (will be made unique within the workspace if it collides)"),
+  description: z.string().optional().describe("New description. Pass empty string to clear."),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+const SkillCollectionFileMoveSchema = z.object({
+  old_path: z.string().describe("Existing relative path"),
+  new_path: z.string().describe("New relative path"),
+});
+
+export const SaveSkillCollectionVersionArgsSchema = z.object({
+  identifier: z.string().describe("Skill collection UUID, name, or root_path"),
+  file_updates: z.array(SkillCollectionFileSchema).optional().describe("Files to add or overwrite. Each item is {path, content}. Files not mentioned are carried forward from the previous version."),
+  moves: z.array(SkillCollectionFileMoveSchema).optional().describe("Files to rename: [{old_path, new_path}, ...]"),
+  deletes: z.array(z.string()).optional().describe("Relative paths of files to delete from the new version"),
+  commit_message: z.string().optional().describe("Commit message describing what changed"),
+  release_label: z.string().optional().describe("Release label to attach to the new version (e.g. 'production')"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+
+// ── Patch Prompt Template Version (PATCH /rest/prompt-templates/{identifier}) ──
+// Partial update: fetches the base version, applies field-level patches, creates a new version.
+
+export const PatchPromptTemplateVersionArgsSchema = z.object({
+  identifier: z.string().describe("Prompt template name or numeric ID"),
+  version: z.number().int().optional().describe("Base version number to patch from (mutually exclusive with label; defaults to latest)"),
+  label: z.string().optional().describe("Release label identifying the base version (mutually exclusive with version)"),
+  messages: z.union([z.record(z.unknown()), z.array(z.record(z.unknown()))]).optional().describe(
+    "Chat templates only. " +
+    "Object form: index-based patch ({\"0\": {...}}) — only listed indices are updated, others preserved. " +
+    "Array form: full replacement of all messages."
+  ),
+  tools: z.union([z.record(z.unknown()), z.array(z.record(z.unknown())), z.null()]).optional().describe(
+    "Chat templates only. Same patching behavior as messages. Pass null to remove all tools."
+  ),
+  functions: z.union([z.record(z.unknown()), z.array(z.record(z.unknown())), z.null()]).optional().describe(
+    "Chat templates only. Same patching behavior as messages. Pass null to remove all functions."
+  ),
+  function_call: z.union([z.string(), z.record(z.unknown()), z.null()]).optional().describe("Replaces the function_call setting. Null removes."),
+  tool_choice: z.union([z.string(), z.record(z.unknown()), z.null()]).optional().describe("Replaces the tool_choice setting. Null removes."),
+  content: z.union([z.record(z.unknown()), z.array(z.record(z.unknown()))]).optional().describe(
+    "Completion templates only. Same index-based / full-replacement behavior as messages."
+  ),
+  model_parameters: z.record(z.unknown()).optional().describe("Shallow-merged into existing model parameters (e.g. temperature, max_tokens)."),
+  response_format: z.union([z.record(z.unknown()), z.null()]).optional().describe("Convenience field to set response_format inside model parameters. Null removes. Cannot be combined with response_format inside model_parameters."),
+  commit_message: z.string().optional().describe("Commit message for the new version"),
+  release_labels: z.array(z.string()).optional().describe("Release labels to create or move to the new version"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+
+// ── Tracking helpers (legacy /rest/track-* endpoints) ────────────────────
+// These are useful when log-request was not the upload path — e.g. you logged
+// a request via SDK and now want to associate metadata, score, prompt, or group.
+
+export const TrackPromptArgsSchema = z.object({
+  request_id: z.number().int().describe("Request ID returned from log-request or the SDK"),
+  prompt_name: z.string().describe("Prompt template name to associate"),
+  prompt_input_variables: z.record(z.string()).optional().describe("Input variables used to format the prompt"),
+  version: z.number().int().optional().describe("Prompt template version (mutually exclusive with label)"),
+  label: z.string().optional().describe("Release label of the prompt template version (mutually exclusive with version)"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const TrackScoreArgsSchema = z.object({
+  request_id: z.number().int().describe("Request ID returned from log-request or the SDK"),
+  score: z.number().int().min(0).max(100).describe("Score from 0 to 100"),
+  name: z.string().optional().describe("Optional named score (e.g. 'relevance', 'safety'). Omit for the default score."),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const TrackMetadataArgsSchema = z.object({
+  request_id: z.number().int().describe("Request ID returned from log-request or the SDK"),
+  metadata: z.record(z.string()).describe("Metadata to associate with the request (e.g. {session_id, user_id, location})"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const TrackGroupArgsSchema = z.object({
+  request_id: z.number().int().describe("Request ID returned from log-request or the SDK"),
+  group_id: z.number().int().describe("Group ID to associate the request with"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+
 // ── Search Request Logs (POST /api/public/v2/requests/search) ────────────
 // (StructuredFilter / StructuredFilterGroup are defined higher up so the
 // dataset-from-filter-params endpoint can reuse them.)
@@ -632,6 +750,22 @@ export const SearchRequestLogsArgsSchema = z.object({
   ]).optional().describe("Sort field"),
   sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction (must be provided with sort_by)"),
   include_prompt_name: z.boolean().optional().describe("Include prompt template name in results"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+// ── Get Request Analytics (POST /api/public/v2/requests/analytics) ───────
+// Same RequestLogQuery body as search-request-logs (filter_group/q/sort), but
+// returns aggregated charts (requests/tokens/cost over time, latency stats,
+// model & prompt breakdowns) instead of paginated rows.
+
+export const GetRequestAnalyticsArgsSchema = z.object({
+  filter_group: StructuredFilterGroupSchema.optional().describe("Filter group with AND/OR logic, same shape as search-request-logs. Scopes the analytics to matching requests."),
+  q: z.string().optional().describe("Free-text search applied alongside filter_group"),
+  sort_by: z.enum([
+    "request_start_time", "input_tokens", "output_tokens", "cost", "latency_ms", "status",
+    "turn_count", "tool_call_count",
+  ]).optional().describe("Sort field (rarely affects analytics output but accepted for parity with search)"),
+  sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -1067,5 +1201,100 @@ export const TOOL_DEFINITIONS = {
     description: "Resolve a folder path (e.g. 'foo/bar') to a folder ID.",
     inputSchema: ResolveFolderIdArgsSchema,
     annotations: { readOnlyHint: true },
+  },
+
+  // ── Skill Collections ───────────────────────────────────────────────
+  "list-skill-collections": {
+    name: "list-skill-collections",
+    description: "List all skill collections in the workspace. Returns each collection's UUID, name, root_path, provider, description, and timestamps.",
+    inputSchema: ListSkillCollectionsArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "create-skill-collection": {
+    name: "create-skill-collection",
+    description:
+      "Create a new skill collection with optional initial files. Each file is {path, content} where path is relative inside the collection " +
+      "(e.g. 'README.md' or 'src/util.ts'). Provider is auto-detected from file paths if omitted (e.g. .claude/* → 'claude'). " +
+      "Names are made unique within the workspace if they collide.",
+    inputSchema: CreateSkillCollectionArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "get-skill-collection": {
+    name: "get-skill-collection",
+    description:
+      "Fetch a skill collection by UUID, name, or root_path. Returns the collection metadata, the version object, and a 'files' map of " +
+      "{relative_path: file_content}. Pin a specific version with 'version' (number) or 'label' (release label) — these are mutually exclusive. " +
+      "If neither is provided, returns the latest committed version.",
+    inputSchema: GetSkillCollectionArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "update-skill-collection": {
+    name: "update-skill-collection",
+    description: "Rename a skill collection or update its description. To save new file contents as a version, use save-skill-collection-version instead.",
+    inputSchema: UpdateSkillCollectionArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "save-skill-collection-version": {
+    name: "save-skill-collection-version",
+    description:
+      "Save a new version of a skill collection. Apply file changes via three lists: " +
+      "file_updates (add or overwrite — files not mentioned are carried forward unchanged), " +
+      "moves (rename), and deletes (remove). Optionally attach a release_label to the new version.",
+    inputSchema: SaveSkillCollectionVersionArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+
+  // ── Analytics ───────────────────────────────────────────────────────
+  "get-request-analytics": {
+    name: "get-request-analytics",
+    description:
+      "Aggregate analytics across request logs — totals (requests, tokens, cost), time-series breakdowns, latency percentiles, " +
+      "and most-used models/prompts. Body is the same shape as search-request-logs (filter_group, q, sort_by, sort_order); the response is aggregated, not paginated rows. " +
+      "Use this to answer questions like 'how much have we spent on GPT-4o this week?' or 'what's the p90 latency for prod traffic?'.",
+    inputSchema: GetRequestAnalyticsArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+
+  // ── Prompt Template Patch ───────────────────────────────────────────
+  "patch-prompt-template-version": {
+    name: "patch-prompt-template-version",
+    description:
+      "Partially update a prompt template by creating a new version with merged changes. Fetches the base version (latest by default, or pin via version/label), " +
+      "applies field-level patches, and creates a new version.\n\n" +
+      "MERGE BEHAVIOR:\n" +
+      "  - messages/tools/functions/content: object form is index-based patch ({\"0\": {...}} updates only listed indices); array form fully replaces.\n" +
+      "  - tools/functions/function_call/tool_choice/response_format: pass null to remove.\n" +
+      "  - model_parameters: shallow merge — existing keys are preserved unless overwritten.\n" +
+      "  - release_labels: creates or moves the labels to the new version.\n\n" +
+      "Use this for surgical edits (e.g. tweak the system message, add a tool, change temperature) without resending the whole template. " +
+      "For a full rewrite, use publish-prompt-template instead.",
+    inputSchema: PatchPromptTemplateVersionArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+
+  // ── Legacy tracking ────────────────────────────────────────────────
+  "track-prompt": {
+    name: "track-prompt",
+    description: "Associate a prompt template with an existing request log. Useful when the request was logged without a prompt link and you want to attach one after the fact.",
+    inputSchema: TrackPromptArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "track-score": {
+    name: "track-score",
+    description: "Score an existing request log (0-100). Pass 'name' for a named score (e.g. 'relevance'); omit for the default score.",
+    inputSchema: TrackScoreArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "track-metadata": {
+    name: "track-metadata",
+    description: "Attach metadata (e.g. session_id, user_id, location) to an existing request log. Metadata values must be strings.",
+    inputSchema: TrackMetadataArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "track-group": {
+    name: "track-group",
+    description: "Associate a request log with a group ID. Useful for linking multiple related requests under a shared group identifier.",
+    inputSchema: TrackGroupArgsSchema,
+    annotations: { readOnlyHint: false },
   },
 } as const;
