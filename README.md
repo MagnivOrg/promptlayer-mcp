@@ -1,6 +1,6 @@
 # PromptLayer MCP Server
 
-MCP server that wraps the [PromptLayer REST API](https://docs.promptlayer.com/reference/rest-api-reference), giving any MCP-compatible client access to all 64 PromptLayer tools.
+MCP server that wraps the [PromptLayer REST API](https://docs.promptlayer.com/reference/rest-api-reference), giving any MCP-compatible client access to all 60 PromptLayer tools.
 
 ## Setup
 
@@ -110,10 +110,6 @@ node build/index.js
 | Tool | Description |
 |---|---|
 | `log-request` | Log an LLM request/response pair. Input/output in Prompt Blueprint format. |
-| `track-prompt` | Link a logged request to a prompt template. |
-| `track-score` | Score a logged request (0-100). Supports named scores. |
-| `track-metadata` | Attach metadata to a logged request. |
-| `track-group` | Associate a request with a group. |
 | `create-spans-bulk` | Create OpenTelemetry spans in bulk for tracing. |
 | `search-request-logs` | Search request logs with filters. |
 | `get-request` | Get a single request by ID. |

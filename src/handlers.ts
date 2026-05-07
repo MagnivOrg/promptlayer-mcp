@@ -188,10 +188,4 @@ export function registerAllTools(server: any) {
   reg(t["patch-prompt-template-version"],
     (c, a) => { const { api_key: _, identifier, ...b } = a as { identifier: string; api_key?: string } & Args; return c.patchPromptTemplateVersion(identifier, b); },
     (r) => { const v = (r as { version_number?: number }).version_number; return v !== undefined ? `Patched — new version ${v} created` : "Patched — new version created"; });
-
-  // Legacy tracking
-  reg(t["track-prompt"], (c, a) => c.trackPrompt(body(a)), () => "Prompt tracked");
-  reg(t["track-score"], (c, a) => c.trackScore(body(a)), () => "Score tracked");
-  reg(t["track-metadata"], (c, a) => c.trackMetadata(body(a)), () => "Metadata tracked");
-  reg(t["track-group"], (c, a) => c.trackGroup(body(a)), () => "Group tracked");
 }

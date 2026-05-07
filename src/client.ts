@@ -125,10 +125,4 @@ export class PromptLayerClient {
 
   // Prompt template patch
   patchPromptTemplateVersion(identifier: string, body: Body) { return this.patch(`/rest/prompt-templates/${this.enc(identifier)}`, body); }
-
-  // Legacy tracking
-  trackPrompt(body: Body) { return this.post("/rest/track-prompt", body); }
-  trackScore(body: Body) { return this.post("/rest/track-score", body); }
-  trackMetadata(body: Body) { return this.post("/rest/track-metadata", body); }
-  trackGroup(body: Body) { return this.post("/rest/track-group", body); }
 }

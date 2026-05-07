@@ -702,70 +702,41 @@ export const PatchPromptTemplateVersionArgsSchema = z.object({
 });
 
 
-// ── Tracking helpers (legacy /rest/track-* endpoints) ────────────────────
-// These are useful when log-request was not the upload path — e.g. you logged
-// a request via SDK and now want to associate metadata, score, prompt, or group.
 
-export const TrackPromptArgsSchema = z.object({
-  request_id: z.number().int().describe("Request ID returned from log-request or the SDK"),
-  prompt_name: z.string().describe("Prompt template name to associate"),
-  prompt_input_variables: z.record(z.string()).optional().describe("Input variables used to format the prompt"),
-  version: z.number().int().optional().describe("Prompt template version (mutually exclusive with label)"),
-  label: z.string().optional().describe("Release label of the prompt template version (mutually exclusive with version)"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
 
-export const TrackScoreArgsSchema = z.object({
-  request_id: z.number().int().describe("Request ID returned from log-request or the SDK"),
-  score: z.number().int().min(0).max(100).describe("Score from 0 to 100"),
-  name: z.string().optional().describe("Optional named score (e.g. 'relevance', 'safety'). Omit for the default score."),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
+// ── Request log query (shared by /requests/search and /requests/analytics) ──
+// Backend models: search uses PostStructuredSearchRequest = RequestLogQuery + page/per_page/include_prompt_name;
+// analytics uses RequestLogQuery directly. We share the 4 RequestLogQuery fields here.
 
-export const TrackMetadataArgsSchema = z.object({
-  request_id: z.number().int().describe("Request ID returned from log-request or the SDK"),
-  metadata: z.record(z.string()).describe("Metadata to associate with the request (e.g. {session_id, user_id, location})"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-export const TrackGroupArgsSchema = z.object({
-  request_id: z.number().int().describe("Request ID returned from log-request or the SDK"),
-  group_id: z.number().int().describe("Group ID to associate the request with"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
+const RequestLogQueryShape = {
+  filter_group: StructuredFilterGroupSchema.optional().describe("Filter group with AND/OR logic, supports nesting. Wrap multiple filters in an AND group."),
+  q: z.string().optional().describe("Free-text search across prompt input and LLM output"),
+  sort_by: z.enum([
+    "request_start_time", "input_tokens", "output_tokens", "cost", "latency_ms", "status",
+    "turn_count", "tool_call_count",
+  ]).optional().describe("Sort field"),
+  sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction (must be provided with sort_by)"),
+};
 
 // ── Search Request Logs (POST /api/public/v2/requests/search) ────────────
 // (StructuredFilter / StructuredFilterGroup are defined higher up so the
 // dataset-from-filter-params endpoint can reuse them.)
 
 export const SearchRequestLogsArgsSchema = z.object({
-  filter_group: StructuredFilterGroupSchema.optional().describe("Filter group with AND/OR logic, supports nesting. Wrap multiple filters in an AND group."),
-  q: z.string().optional().describe("Free-text search across prompt input and LLM output"),
+  ...RequestLogQueryShape,
   page: z.number().int().optional().describe("Page number (default: 1)"),
   per_page: z.number().int().optional().describe("Items per page (max: 25)"),
-  sort_by: z.enum([
-    "request_start_time", "input_tokens", "output_tokens", "cost", "latency_ms", "status",
-    "turn_count", "tool_call_count",
-  ]).optional().describe("Sort field"),
-  sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction (must be provided with sort_by)"),
   include_prompt_name: z.boolean().optional().describe("Include prompt template name in results"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
 // ── Get Request Analytics (POST /api/public/v2/requests/analytics) ───────
-// Same RequestLogQuery body as search-request-logs (filter_group/q/sort), but
-// returns aggregated charts (requests/tokens/cost over time, latency stats,
-// model & prompt breakdowns) instead of paginated rows.
+// Same RequestLogQuery body as search-request-logs but returns aggregated
+// charts (requests/tokens/cost over time, latency stats, model & prompt
+// breakdowns) instead of paginated rows.
 
 export const GetRequestAnalyticsArgsSchema = z.object({
-  filter_group: StructuredFilterGroupSchema.optional().describe("Filter group with AND/OR logic, same shape as search-request-logs. Scopes the analytics to matching requests."),
-  q: z.string().optional().describe("Free-text search applied alongside filter_group"),
-  sort_by: z.enum([
-    "request_start_time", "input_tokens", "output_tokens", "cost", "latency_ms", "status",
-    "turn_count", "tool_call_count",
-  ]).optional().describe("Sort field (rarely affects analytics output but accepted for parity with search)"),
-  sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction"),
+  ...RequestLogQueryShape,
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -1272,29 +1243,4 @@ export const TOOL_DEFINITIONS = {
     annotations: { readOnlyHint: false },
   },
 
-  // ── Legacy tracking ────────────────────────────────────────────────
-  "track-prompt": {
-    name: "track-prompt",
-    description: "Associate a prompt template with an existing request log. Useful when the request was logged without a prompt link and you want to attach one after the fact.",
-    inputSchema: TrackPromptArgsSchema,
-    annotations: { readOnlyHint: false },
-  },
-  "track-score": {
-    name: "track-score",
-    description: "Score an existing request log (0-100). Pass 'name' for a named score (e.g. 'relevance'); omit for the default score.",
-    inputSchema: TrackScoreArgsSchema,
-    annotations: { readOnlyHint: false },
-  },
-  "track-metadata": {
-    name: "track-metadata",
-    description: "Attach metadata (e.g. session_id, user_id, location) to an existing request log. Metadata values must be strings.",
-    inputSchema: TrackMetadataArgsSchema,
-    annotations: { readOnlyHint: false },
-  },
-  "track-group": {
-    name: "track-group",
-    description: "Associate a request log with a group ID. Useful for linking multiple related requests under a shared group identifier.",
-    inputSchema: TrackGroupArgsSchema,
-    annotations: { readOnlyHint: false },
-  },
 } as const;
