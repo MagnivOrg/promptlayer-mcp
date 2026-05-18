@@ -529,11 +529,19 @@ export const GetToolRegistryArgsSchema = z.object({
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
+export const ToolExecutionSchema = z.object({
+  type: z.literal("code"),
+  language: z.enum(["python", "javascript"]),
+  code: z.string().describe("Function body only. Signature is auto-generated; LLM args arrive as a single `args` object."),
+});
+
 export const CreateToolRegistryArgsSchema = z.object({
   name: z.string().describe("Tool name (unique per workspace)"),
   tool_definition: z.record(z.unknown()).describe("Tool definition in OpenAI function-calling format: {type: 'function', function: {name, description, parameters}}"),
+  description: z.string().optional().describe("Optional human-readable description of the tool"),
   folder_id: z.number().int().optional().describe("Folder ID to place tool in"),
   commit_message: z.string().optional().describe("Commit message for the initial version"),
+  execution: ToolExecutionSchema.optional().describe("Optional sandbox-executable body. When set, PromptLayer auto-runs the body between LLM turns whenever a prompt uses this tool."),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -541,6 +549,17 @@ export const CreateToolVersionArgsSchema = z.object({
   identifier: z.string().describe("Tool ID (numeric) or name"),
   tool_definition: z.record(z.unknown()).describe("Updated tool definition in OpenAI function-calling format"),
   commit_message: z.string().optional().describe("Commit message describing what changed"),
+  execution: ToolExecutionSchema.optional().describe("Optional sandbox-executable body to attach to this version. See ToolExecutionSchema for details."),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const TestExecuteToolRegistryArgsSchema = z.object({
+  identifier: z.string().describe("Tool ID (numeric) or name"),
+  inputs: z.record(z.unknown()).optional().describe("Arguments passed to the tool body, keyed by the tool's parameter names. Same shape the LLM would emit."),
+  execution: ToolExecutionSchema.optional().describe("In-flight override of the stored execution config. Lets you test unsaved code without creating a version."),
+  tool_definition: z.record(z.unknown()).optional().describe("In-flight override of the stored tool definition. Useful for testing a different function name without saving."),
+  label: z.string().optional().describe("Resolve version by label name (e.g. 'production'). Falls back to latest if neither label nor version given."),
+  version: z.number().int().optional().describe("Resolve by specific version number"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -1125,14 +1144,20 @@ export const TOOL_DEFINITIONS = {
   },
   "create-tool-registry": {
     name: "create-tool-registry",
-    description: "Create a new tool in the Tool Registry with an initial version. The tool definition should be in OpenAI function-calling format.",
+    description: "Create a new tool in the Tool Registry with an initial version. The tool definition should be in OpenAI function-calling format. Pass an optional `execution` payload to attach a sandbox-executable body that PromptLayer will auto-run between LLM turns.",
     inputSchema: CreateToolRegistryArgsSchema,
     annotations: { readOnlyHint: false },
   },
   "create-tool-version": {
     name: "create-tool-version",
-    description: "Create a new version of an existing tool in the Tool Registry. Each version is immutable — this adds a new version with the updated definition.",
+    description: "Create a new version of an existing tool in the Tool Registry. Each version is immutable - this adds a new version with the updated definition. Pass an optional `execution` payload to attach (or replace) the sandbox-executable body for this version.",
     inputSchema: CreateToolVersionArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "test-execute-tool-registry": {
+    name: "test-execute-tool-registry",
+    description: "Run a tool's execution body in the sandbox against test inputs. Returns the body's return value plus stdout/stderr/duration. Useful for verifying a body before publishing. Pass `execution` and/or `tool_definition` to test unsaved overrides without creating a version. User-code errors return status='error' inside the result (HTTP 200); sandbox infrastructure failures return HTTP 502.",
+    inputSchema: TestExecuteToolRegistryArgsSchema,
     annotations: { readOnlyHint: false },
   },
 

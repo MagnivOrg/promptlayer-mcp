@@ -150,6 +150,20 @@ export function registerAllTools(server: any) {
   reg(t["create-tool-version"],
     (c, a) => { const { api_key: _, identifier, ...b } = a as { identifier: string; api_key?: string } & Args; return c.createToolVersion(identifier, b); },
     (r) => { const v = (r as { version?: { number?: number } }).version; return v ? `Version ${v.number} created` : "Version created"; });
+  reg(t["test-execute-tool-registry"],
+    (c, a) => {
+      const { api_key: _, identifier, label, version, ...rest } = a as { identifier: string; api_key?: string; label?: string; version?: number } & Args;
+      const query: Record<string, unknown> = {};
+      if (label !== undefined) query.label = label;
+      if (version !== undefined) query.version = version;
+      return c.testExecuteToolRegistry(identifier, rest, query);
+    },
+    (r) => {
+      const res = (r as { result?: { status?: string; duration_ms?: number; error?: { message?: string } } }).result;
+      if (!res) return "Tool executed";
+      if (res.status === "error") return `Tool failed: ${res.error?.message ?? "unknown error"}`;
+      return `Tool executed (${res.duration_ms ?? 0} ms)`;
+    });
 
   // Folders
   reg(t["create-folder"], (c, a) => c.createFolder(body(a)), () => "Folder created");

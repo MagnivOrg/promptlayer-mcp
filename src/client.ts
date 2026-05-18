@@ -104,6 +104,7 @@ export class PromptLayerClient {
   getToolRegistry(identifier: string, params?: Body) { return this.get(`/api/public/v2/tool-registry/${this.enc(identifier)}`, params); }
   createToolRegistry(body: Body) { return this.post("/api/public/v2/tool-registry", body); }
   createToolVersion(identifier: string, body: Body) { return this.post(`/api/public/v2/tool-registry/${this.enc(identifier)}/versions`, body); }
+  testExecuteToolRegistry(identifier: string, body: Body, query?: Body) { return this.post(`/api/public/v2/tool-registry/${this.enc(identifier)}/test-execute${buildQueryParams(query)}`, body); }
 
   // Folders
   createFolder(body: Body) { return this.post("/api/public/v2/folders", body); }
