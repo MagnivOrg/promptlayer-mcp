@@ -1,6 +1,6 @@
 # PromptLayer MCP Server
 
-MCP server that wraps the [PromptLayer REST API](https://docs.promptlayer.com/reference/rest-api-reference), giving any MCP-compatible client access to all 60 PromptLayer tools.
+MCP server that wraps the [PromptLayer REST API](https://docs.promptlayer.com/reference/rest-api-reference), giving any MCP-compatible client access to all 61 PromptLayer tools.
 
 ## Setup
 
@@ -104,6 +104,7 @@ node build/index.js
 | `get-tool-registry` | Get a tool by ID or name. Optionally resolve a specific version by label or version number. |
 | `create-tool-registry` | Create a new tool with an initial version. |
 | `create-tool-version` | Create a new version of an existing tool with an updated definition. |
+| `test-execute-tool-registry` | Run a tool's execution body in the sandbox against test inputs. Returns the body's return value plus stdout/stderr/duration. Supports unsaved `execution` / `tool_definition` overrides via `label` or `version`. |
 
 ### Tracking
 
