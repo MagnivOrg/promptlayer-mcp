@@ -100,6 +100,12 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
   "create-tool-registry": (c, a) => c.createToolRegistry(body(a)),
   "create-tool-version": (c, { api_key: _, identifier, ...b }) =>
     c.createToolVersion(identifier as string, b),
+  "test-execute-tool-registry": (c, { api_key: _, identifier, label, version, ...b }) => {
+    const query: Args = {};
+    if (label !== undefined) query.label = label;
+    if (version !== undefined) query.version = version;
+    return c.testExecuteToolRegistry(identifier as string, b, query);
+  },
 
   // Folders
   "create-folder": (c, a) => c.createFolder(body(a)),
