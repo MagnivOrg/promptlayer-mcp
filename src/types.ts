@@ -313,6 +313,15 @@ export const SaveDraftDatasetVersionArgsSchema = z.object({
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
+// ── Add Trace to Draft Dataset (POST /api/public/v2/dataset-versions/add-trace) ─────
+
+export const AddTraceToDatasetVersionArgsSchema = z.object({
+  dataset_group_id: z.number().int().min(1).describe("ID of the dataset group containing the draft"),
+  trace_id: z.string().min(1).describe("ID of the trace to add as a dataset row"),
+  span_id: z.string().min(1).optional().describe("Optional span ID to anchor the row on a specific span subtree instead of the full trace"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
 // ── List Evaluations (GET /api/public/v2/evaluations) ────────────────────
 
 export const ListEvaluationsArgsSchema = z.object({
@@ -1002,6 +1011,12 @@ export const TOOL_DEFINITIONS = {
     name: "save-draft-dataset-version",
     description: "Publish a draft dataset version by assigning it a real version number. Processed asynchronously.",
     inputSchema: SaveDraftDatasetVersionArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "add-trace-to-dataset": {
+    name: "add-trace-to-dataset",
+    description: "Add a trace as a row to the draft dataset version. Pass span_id to anchor on a specific span subtree instead of the full trace root. Requires create-draft first.",
+    inputSchema: AddTraceToDatasetVersionArgsSchema,
     annotations: { readOnlyHint: false },
   },
 
