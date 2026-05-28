@@ -55,6 +55,7 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
     c.getDatasetRows(dataset_id as number, p),
   "create-draft-dataset-version": (c, a) => c.createDraftDatasetVersion(body(a)),
   "add-request-log-to-dataset": (c, a) => c.addRequestLogToDatasetVersion(body(a)),
+  "add-trace-to-dataset": (c, a) => c.addTraceToDatasetVersion(body(a)),
   "save-draft-dataset-version": (c, a) => c.saveDraftDatasetVersion(body(a)),
 
   // Evaluations

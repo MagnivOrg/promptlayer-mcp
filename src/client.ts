@@ -73,6 +73,7 @@ export class PromptLayerClient {
   createDatasetVersionFromFilterParams(body: Body) { return this.post("/api/public/v2/dataset-versions/from-filter-params", body); }
   createDraftDatasetVersion(body: Body) { return this.post("/api/public/v2/dataset-versions/create-draft", body); }
   addRequestLogToDatasetVersion(body: Body) { return this.post("/api/public/v2/dataset-versions/add-request-log", body); }
+  addTraceToDatasetVersion(body: Body) { return this.post("/api/public/v2/dataset-versions/add-trace", body); }
   saveDraftDatasetVersion(body: Body) { return this.post("/api/public/v2/dataset-versions/save-draft", body); }
 
   // Evaluations

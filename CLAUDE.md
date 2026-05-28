@@ -9,6 +9,7 @@ Project conventions and decisions for the PromptLayer MCP server.
 - `src/client.ts` -- HTTP client with `get`/`post`/`patch`/`del` helpers
 - `src/utils.ts` -- Query params, error handling, shared `createToolHandler` factory
 - `src/index.ts` -- Entry point
+- `gcp/src/index.ts` -- Cloud Run HTTP variant. Reuses `src/types.ts` and `src/client.ts`, but has its own dispatch table (`TOOL_HANDLERS`) — every tool registered in `src/handlers.ts` needs a matching entry here.
 
 ## Response types: don't add them
 
@@ -27,6 +28,7 @@ Every tool's input schema is a Zod object in `src/types.ts`. Schemas should matc
 1. Add Zod schema + entry in `TOOL_DEFINITIONS` in `src/types.ts`
 2. Add client method in `src/client.ts`
 3. Register the tool in `src/handlers.ts`
+4. Add a dispatch entry in `gcp/src/index.ts` `TOOL_HANDLERS` so the Cloud Run server exposes it too
 
 ## Commands
 

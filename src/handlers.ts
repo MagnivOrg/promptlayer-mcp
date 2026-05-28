@@ -80,6 +80,8 @@ export function registerAllTools(server: any) {
     (r) => { const { rows, total, page, pages } = r as { rows?: unknown[]; total?: number; page?: number; pages?: number }; return `${rows?.length ?? 0} row(s) (page ${page ?? 1}/${pages ?? 1}, total ${total ?? "?"})`; });
   reg(t["create-draft-dataset-version"], (c, a) => c.createDraftDatasetVersion(body(a)), () => "Draft dataset version created");
   reg(t["add-request-log-to-dataset"], (c, a) => c.addRequestLogToDatasetVersion(body(a)), () => "Request log added to draft dataset");
+  reg(t["add-trace-to-dataset"], (c, a) => c.addTraceToDatasetVersion(body(a)),
+    (r) => { const m = (r as { mode?: string }).mode; return m ? `Trace added to draft dataset (mode: ${m})` : "Trace added to draft dataset"; });
   reg(t["save-draft-dataset-version"], (c, a) => c.saveDraftDatasetVersion(body(a)), () => "Draft dataset save initiated");
 
   // Evaluations
