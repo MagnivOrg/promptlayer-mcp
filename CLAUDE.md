@@ -28,6 +28,7 @@ Every tool's input schema is a Zod object in `src/types.ts`. Schemas should matc
 1. Add Zod schema + entry in `TOOL_DEFINITIONS` in `src/types.ts`
 2. Add client method in `src/client.ts`
 3. Register the tool in `src/handlers.ts`
+4. Bump the `version` in `package.json` (minor for additive changes)
 4. Add a dispatch entry in `gcp/src/index.ts` `TOOL_HANDLERS` so the Cloud Run server exposes it too
 
 ## Commands
