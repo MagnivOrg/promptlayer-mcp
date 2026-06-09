@@ -1,6 +1,6 @@
 # PromptLayer MCP Server
 
-MCP server that wraps the [PromptLayer REST API](https://docs.promptlayer.com/reference/rest-api-reference), giving any MCP-compatible client access to all 61 PromptLayer tools.
+MCP server that wraps the [PromptLayer REST API](https://docs.promptlayer.com/reference/rest-api-reference), giving any MCP-compatible client access to all 97 PromptLayer tools.
 
 ## Setup
 
@@ -118,7 +118,49 @@ node build/index.js
 | `get-request-search-suggestions` | Get filter suggestions for request log search. |
 | `get-request-analytics` | Aggregated analytics across request logs (totals, time series, latency percentiles, model/prompt breakdowns). Same filter shape as `search-request-logs`. |
 
-### Datasets
+### Smart Tables
+
+Smart Tables are the recommended replacement for legacy datasets and evaluations.
+
+| Tool | Description |
+|---|---|
+| `list-smart-tables` | List Smart Tables with cursor pagination and filters. |
+| `create-smart-table` | Create a Smart Table with a default sheet and text column. |
+| `get-smart-table` | Get a Smart Table by UUID. |
+| `update-smart-table` | Update a Smart Table title or folder. |
+| `list-smart-table-sheets` | List sheets in a Smart Table. |
+| `create-smart-table-sheet` | Create a sheet from a file or request-log source. |
+| `get-smart-table-sheet` | Get a single sheet. |
+| `update-smart-table-sheet` | Update a sheet title or index. |
+| `get-smart-table-sheet-import-operation` | Get import operation status. |
+| `import-smart-table-sheet-file` | Import base64 CSV content into an existing sheet. |
+| `import-smart-table-sheet-request-logs` | Import request logs into an existing sheet. |
+| `list-smart-table-columns` | List sheet columns. |
+| `create-smart-table-column` | Create a sheet column. |
+| `update-smart-table-column` | Update a column title, config, or dependencies. |
+| `list-smart-table-rows` | List sheet rows. |
+| `add-smart-table-rows` | Add rows to a sheet. |
+| `get-smart-table-cell` | Get a cell by UUID. |
+| `update-smart-table-cell` | Update a text cell. |
+| `recalculate-smart-table-cell` | Recalculate one computed cell. |
+| `recalculate-smart-table-cells` | Recalculate multiple computed cells. |
+| `list-smart-table-operations` | List active sheet operations and status counts. |
+| `create-smart-table-operation` | Start a sheet operation, currently recalculation. |
+| `get-smart-table-operation` | Get operation status. |
+| `cancel-smart-table-operation` | Cancel an active operation. |
+| `get-smart-table-score` | Get sheet score configuration and score. |
+| `configure-smart-table-score` | Configure sheet scoring. |
+| `recalculate-smart-table-score` | Recalculate a configured sheet score. |
+| `list-smart-table-versions` | List sheet versions. |
+| `get-smart-table-version` | Get a sheet version snapshot. |
+| `create-smart-table-version` | Create or restore a sheet version. |
+| `get-smart-table-score-history` | Get sheet score history. |
+| `list-legacy-smart-table-migrations` | List successful legacy migration mappings. |
+| `preview-legacy-smart-table-migration` | Preview dataset/evaluation conversion into a Smart Table. |
+| `migrate-legacy-to-smart-table` | Start or dry-run dataset/evaluation conversion. |
+| `get-legacy-smart-table-migration-job` | Get legacy migration job status and result. |
+
+### Legacy Datasets
 
 | Tool | Description |
 |---|---|
@@ -131,7 +173,7 @@ node build/index.js
 | `add-request-log-to-dataset` | Add a request log entry to a draft dataset version. |
 | `save-draft-dataset-version` | Finalize and save a draft dataset version. |
 
-### Evaluations
+### Legacy Evaluations
 
 | Tool | Description |
 |---|---|

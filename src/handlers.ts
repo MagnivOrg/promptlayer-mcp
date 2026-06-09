@@ -4,6 +4,11 @@ import { createToolHandler } from "./utils.js";
 
 type Args = Record<string, unknown> & { api_key?: string };
 function body(args: Args) { const { api_key: _, ...rest } = args; return rest; }
+function omit(args: Args, ...keys: string[]) {
+  const rest = body(args);
+  for (const key of keys) delete rest[key];
+  return rest;
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function registerAllTools(server: any) {
@@ -68,6 +73,126 @@ export function registerAllTools(server: any) {
     (r) => { const id = (r as { request_id?: unknown }).request_id; return id ? `Logged (ID: ${id})` : "Logged"; });
   reg(t["create-spans-bulk"], (c, a) => c.createSpansBulk(body(a)),
     (r) => `Created ${(r as { spans?: unknown[] }).spans?.length ?? 0} span(s)`);
+
+  // Smart Tables
+  reg(t["list-smart-tables"], (c, a) => c.listSmartTables(body(a)),
+    (r) => `${(r as { data?: unknown[] }).data?.length ?? 0} table(s)`);
+  reg(t["create-smart-table"], (c, a) => c.createSmartTable(body(a)),
+    (r) => {
+      const table = (r as { table?: { id?: string; title?: string } }).table;
+      return table?.id ? `Table "${table.title ?? ""}" created (${table.id})` : "Table created";
+    });
+  reg(t["get-smart-table"],
+    (c, a) => c.getSmartTable(a.table_id as string),
+    (r) => `Table "${(r as { table?: { title?: string } }).table?.title ?? ""}" retrieved`);
+  reg(t["update-smart-table"],
+    (c, a) => c.updateSmartTable(a.table_id as string, omit(a, "table_id")),
+    () => "Table updated");
+  reg(t["list-smart-table-sheets"],
+    (c, a) => c.listSmartTableSheets(a.table_id as string, omit(a, "table_id")),
+    (r) => `${(r as { data?: unknown[] }).data?.length ?? 0} sheet(s)`);
+  reg(t["create-smart-table-sheet"],
+    (c, a) => c.createSmartTableSheet(a.table_id as string, omit(a, "table_id")),
+    (r) => {
+      const op = (r as { operation_id?: string }).operation_id;
+      return op ? `Sheet import started (${op})` : "Sheet created";
+    });
+  reg(t["get-smart-table-sheet"],
+    (c, a) => c.getSmartTableSheet(a.table_id as string, a.sheet_id as string),
+    () => "Sheet retrieved");
+  reg(t["update-smart-table-sheet"],
+    (c, a) => c.updateSmartTableSheet(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+    () => "Sheet updated");
+  reg(t["get-smart-table-sheet-import-operation"],
+    (c, a) => c.getSmartTableSheetImportOperation(a.table_id as string, a.operation_id as string),
+    (r) => `Import operation ${(r as { operation?: { status?: string } }).operation?.status ?? "retrieved"}`);
+  reg(t["import-smart-table-sheet-file"],
+    (c, a) => c.importSmartTableSheetFile(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+    (r) => `File import started (${(r as { operation_id?: string }).operation_id ?? "operation queued"})`);
+  reg(t["import-smart-table-sheet-request-logs"],
+    (c, a) => c.importSmartTableSheetRequestLogs(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+    (r) => `Request-log import started (${(r as { operation_id?: string }).operation_id ?? "operation queued"})`);
+  reg(t["list-smart-table-columns"],
+    (c, a) => c.listSmartTableColumns(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+    (r) => `${(r as { data?: unknown[] }).data?.length ?? 0} column(s)`);
+  reg(t["create-smart-table-column"],
+    (c, a) => c.createSmartTableColumn(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+    (r) => `Column created${(r as { column?: { id?: string } }).column?.id ? ` (${(r as { column?: { id?: string } }).column?.id})` : ""}`);
+  reg(t["update-smart-table-column"],
+    (c, a) => c.updateSmartTableColumn(a.table_id as string, a.sheet_id as string, a.column_id as string, omit(a, "table_id", "sheet_id", "column_id")),
+    (r) => (r as { requires_recalculation?: boolean }).requires_recalculation ? "Column updated; recalculation required" : "Column updated");
+  reg(t["list-smart-table-rows"],
+    (c, a) => c.listSmartTableRows(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+    (r) => `${(r as { data?: unknown[] }).data?.length ?? 0} row(s)`);
+  reg(t["add-smart-table-rows"],
+    (c, a) => c.addSmartTableRows(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+    (r) => `${(r as { rows?: unknown[]; data?: unknown[] }).rows?.length ?? (r as { data?: unknown[] }).data?.length ?? 0} row(s) added`);
+  reg(t["get-smart-table-cell"],
+    (c, a) => c.getSmartTableCell(a.table_id as string, a.sheet_id as string, a.cell_id as string),
+    () => "Cell retrieved");
+  reg(t["update-smart-table-cell"],
+    (c, a) => c.updateSmartTableCell(a.table_id as string, a.sheet_id as string, a.cell_id as string, omit(a, "table_id", "sheet_id", "cell_id")),
+    () => "Cell updated");
+  reg(t["recalculate-smart-table-cell"],
+    (c, a) => c.recalculateSmartTableCell(a.table_id as string, a.sheet_id as string, a.cell_id as string),
+    (r) => `${(r as { cell_count?: number }).cell_count ?? 0} cell(s) queued`);
+  reg(t["recalculate-smart-table-cells"],
+    (c, a) => c.recalculateSmartTableCells(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+    (r) => `${(r as { cell_count?: number }).cell_count ?? 0} cell(s) queued`);
+  reg(t["list-smart-table-operations"],
+    (c, a) => c.listSmartTableOperations(a.table_id as string, a.sheet_id as string),
+    (r) => `${(r as { active_operations?: unknown[] }).active_operations?.length ?? 0} active operation(s)`);
+  reg(t["create-smart-table-operation"],
+    (c, a) => c.createSmartTableOperation(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+    (r) => {
+      const op = (r as { operation_id?: string; cell_count?: number }).operation_id;
+      return op ? `Operation started (${op})` : `${(r as { cell_count?: number }).cell_count ?? 0} cell(s) affected`;
+    });
+  reg(t["get-smart-table-operation"],
+    (c, a) => c.getSmartTableOperation(a.table_id as string, a.sheet_id as string, a.operation_id as string),
+    (r) => `Operation ${(r as { operation?: { status?: string } }).operation?.status ?? "retrieved"}`);
+  reg(t["cancel-smart-table-operation"],
+    (c, a) => c.cancelSmartTableOperation(a.table_id as string, a.sheet_id as string, a.operation_id as string),
+    (r) => `${(r as { cancelled_cell_count?: number }).cancelled_cell_count ?? 0} cell(s) cancelled`);
+  reg(t["get-smart-table-score"],
+    (c, a) => c.getSmartTableScore(a.table_id as string, a.sheet_id as string),
+    (r) => `Score ${(r as { status?: string | null }).status ?? "retrieved"}`);
+  reg(t["configure-smart-table-score"],
+    (c, a) => c.configureSmartTableScore(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+    () => "Score configured; recalculation required");
+  reg(t["recalculate-smart-table-score"],
+    (c, a) => c.recalculateSmartTableScore(a.table_id as string, a.sheet_id as string),
+    (r) => `Score recalculation ${(r as { status?: string }).status ?? "queued"}`);
+  reg(t["list-smart-table-versions"],
+    (c, a) => c.listSmartTableVersions(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+    (r) => `${(r as { data?: unknown[] }).data?.length ?? 0} version(s)`);
+  reg(t["get-smart-table-version"],
+    (c, a) => c.getSmartTableVersion(a.table_id as string, a.sheet_id as string, a.version_id as string),
+    () => "Version retrieved");
+  reg(t["create-smart-table-version"],
+    (c, a) => c.createSmartTableVersion(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+    (r) => `Version ${(r as { version?: { version_number?: number } }).version?.version_number ?? "created"}`);
+  reg(t["get-smart-table-score-history"],
+    (c, a) => c.getSmartTableScoreHistory(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+    (r) => `${(r as { score_history?: { returned_points?: number } }).score_history?.returned_points ?? 0} score point(s)`);
+  reg(t["list-legacy-smart-table-migrations"],
+    (c, a) => c.listLegacySmartTableMigrations(body(a)),
+    (r) => `${(r as { legacy_migrations?: unknown[] }).legacy_migrations?.length ?? 0} migration mapping(s)`);
+  reg(t["preview-legacy-smart-table-migration"],
+    (c, a) => c.previewLegacySmartTableMigration(body(a)),
+    (r) => {
+      const counts = (r as { estimated_counts?: { sheets?: number; columns?: number; cells?: number } }).estimated_counts;
+      return counts ? `Preview: ${counts.sheets ?? 0} sheet(s), ${counts.columns ?? 0} column(s), ${counts.cells ?? 0} cell(s)` : "Migration preview retrieved";
+    });
+  reg(t["migrate-legacy-to-smart-table"],
+    (c, a) => c.migrateLegacyToSmartTable(body(a)),
+    (r) => {
+      const job = (r as { job_id?: string; dry_run?: boolean }).job_id;
+      return (r as { dry_run?: boolean }).dry_run ? "Migration dry run complete" : `Migration queued${job ? ` (${job})` : ""}`;
+    });
+  reg(t["get-legacy-smart-table-migration-job"],
+    (c, a) => c.getLegacySmartTableMigrationJob(a.job_id as string),
+    (r) => `Migration job ${(r as { status?: string }).status ?? "retrieved"}`);
 
   // Datasets
   reg(t["list-datasets"], (c, a) => c.listDatasets(body(a)),
