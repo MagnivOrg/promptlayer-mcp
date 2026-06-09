@@ -122,6 +122,12 @@ export class PromptLayerClient {
   createToolVersion(identifier: string, body: Body) { return this.post(`/api/public/v2/tool-registry/${this.enc(identifier)}/versions`, body); }
   testExecuteToolRegistry(identifier: string, body: Body, query?: Body) { return this.post(`/api/public/v2/tool-registry/${this.enc(identifier)}/test-execute${buildQueryParams(query)}`, body); }
 
+  // Env Vars (workspace + tool scopes)
+  listWorkspaceEnvVars() { return this.get("/api/public/v2/env-vars"); }
+  createWorkspaceEnvVar(body: Body) { return this.post("/api/public/v2/env-vars", body); }
+  listToolEnvVars(identifier: string) { return this.get(`/api/public/v2/tool-registry/${this.enc(identifier)}/env-vars`); }
+  createToolEnvVar(identifier: string, body: Body) { return this.post(`/api/public/v2/tool-registry/${this.enc(identifier)}/env-vars`, body); }
+
   // Folders
   createFolder(body: Body) { return this.post("/api/public/v2/folders", body); }
   editFolder(folderId: number, body: Body) { return this.patch(`/api/public/v2/folders/${folderId}`, body); }

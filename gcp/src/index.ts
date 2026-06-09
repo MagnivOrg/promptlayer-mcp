@@ -150,6 +150,14 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
     return c.testExecuteToolRegistry(identifier as string, b, query);
   },
 
+  // Env Vars
+  "list-workspace-env-vars": (c) => c.listWorkspaceEnvVars(),
+  "create-workspace-env-var": (c, a) => c.createWorkspaceEnvVar({ ...body(a), value: "" }),
+  "list-tool-env-vars": (c, { identifier }) =>
+    c.listToolEnvVars(identifier as string),
+  "create-tool-env-var": (c, { api_key: _, identifier, ...b }) =>
+    c.createToolEnvVar(identifier as string, { ...b, value: "" }),
+
   // Folders
   "create-folder": (c, a) => c.createFolder(body(a)),
   "edit-folder": (c, { api_key: _, folder_id, ...b }) =>

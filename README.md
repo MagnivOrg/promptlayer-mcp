@@ -1,6 +1,6 @@
 # PromptLayer MCP Server
 
-MCP server that wraps the [PromptLayer REST API](https://docs.promptlayer.com/reference/rest-api-reference), giving any MCP-compatible client access to all 97 PromptLayer tools.
+MCP server that wraps the [PromptLayer REST API](https://docs.promptlayer.com/reference/rest-api-reference), giving any MCP-compatible client access to all 79 PromptLayer tools.
 
 ## Setup
 
@@ -105,6 +105,17 @@ node build/index.js
 | `create-tool-registry` | Create a new tool with an initial version. |
 | `create-tool-version` | Create a new version of an existing tool with an updated definition. |
 | `test-execute-tool-registry` | Run a tool's execution body in the sandbox against test inputs. Returns the body's return value plus stdout/stderr/duration. Supports unsaved `execution` / `tool_definition` overrides via `label` or `version`. |
+
+### Env Vars
+
+Workspace- and tool-scoped environment variables auto-injected into a tool's sandbox execution. Tool-scoped vars override workspace-scoped vars on the same key. Values are encrypted at rest; list responses only return a `value_suffix` (last 4 chars), never the full plaintext. `create-*` only scaffolds an empty placeholder by name; the user sets the real value in Settings, Environment Variables. Update and delete are intentionally only exposed in the UI to keep programmatic surfaces out of the secret-write and destructive paths.
+
+| Tool | Description |
+|---|---|
+| `list-workspace-env-vars` | List workspace-scoped env vars (masked values). |
+| `create-workspace-env-var` | Scaffold a workspace-scoped env var placeholder by `key`. Auto-injected into every auto-executing tool in this workspace once the user sets the value. |
+| `list-tool-env-vars` | List env vars scoped to a specific tool (by ID or name). |
+| `create-tool-env-var` | Scaffold a tool-scoped env var placeholder by `key`. Overrides any workspace-scoped var with the same key during sandbox execution. |
 
 ### Tracking
 

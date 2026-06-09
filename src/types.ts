@@ -352,6 +352,28 @@ export const TestExecuteToolRegistryArgsSchema = z.object({
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
+// ── Env Vars ─────────────────────────────────────────────────────────────
+
+export const ListWorkspaceEnvVarsArgsSchema = z.object({
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const CreateWorkspaceEnvVarArgsSchema = z.object({
+  key: z.string().describe("Env var name. Must match ^[A-Za-z_][A-Za-z0-9_]*$ and not be a reserved runtime name (PATH, LD_PRELOAD, PYTHONSTARTUP, NODE_OPTIONS, etc.)"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const ListToolEnvVarsArgsSchema = z.object({
+  identifier: z.string().describe("Tool ID (numeric) or name"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const CreateToolEnvVarArgsSchema = z.object({
+  identifier: z.string().describe("Tool ID (numeric) or name"),
+  key: z.string().describe("Env var name. Must match ^[A-Za-z_][A-Za-z0-9_]*$ and not be a reserved runtime name."),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
 export const CreateFolderArgsSchema = z.object({
   name: z.string().describe("Folder name (unique within parent)"),
   parent_id: z.number().int().optional().describe("Parent folder ID (root if omitted)"),
@@ -1422,6 +1444,32 @@ export const TOOL_DEFINITIONS = {
     name: "test-execute-tool-registry",
     description: "Run a tool's execution body in the sandbox against test inputs. Returns the body's return value plus stdout/stderr/duration. Useful for verifying a body before publishing. Pass `execution` and/or `tool_definition` to test unsaved overrides without creating a version. User-code errors return status='error' inside the result (HTTP 200); sandbox infrastructure failures return HTTP 502.",
     inputSchema: TestExecuteToolRegistryArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+
+  // ── Env Vars ────────────────────────────────────────────────────────
+  "list-workspace-env-vars": {
+    name: "list-workspace-env-vars",
+    description: "List workspace-scoped environment variables. Returned values are masked (only `value_suffix` — last 4 chars). Workspace vars auto-inject into every auto-executing tool in this workspace; tool-scoped vars override them on the same key.",
+    inputSchema: ListWorkspaceEnvVarsArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "create-workspace-env-var": {
+    name: "create-workspace-env-var",
+    description: "Scaffold a workspace-scoped environment variable placeholder. Auto-injected into every auto-executing tool in this workspace. The value is always created empty; the user fills in the real value via Settings, Environment Variables. Key must match ^[A-Za-z_][A-Za-z0-9_]*$ and not collide with reserved runtime names.",
+    inputSchema: CreateWorkspaceEnvVarArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "list-tool-env-vars": {
+    name: "list-tool-env-vars",
+    description: "List tool-scoped environment variables for a specific tool (by ID or name). Returned values are masked (only `value_suffix`). Tool-scoped vars override workspace-scoped vars on the same key during sandbox execution.",
+    inputSchema: ListToolEnvVarsArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "create-tool-env-var": {
+    name: "create-tool-env-var",
+    description: "Scaffold a tool-scoped environment variable placeholder on a specific tool. Auto-injected only into THIS tool's sandbox execution and overrides any workspace-scoped var with the same key. The value is always created empty; the user fills in the real value via Settings.",
+    inputSchema: CreateToolEnvVarArgsSchema,
     annotations: { readOnlyHint: false },
   },
 
