@@ -167,6 +167,18 @@ export function registerAllTools(server: any) {
       return `Tool executed (${res.duration_ms ?? 0} ms)`;
     });
 
+  // Env Vars
+  reg(t["list-workspace-env-vars"], (c) => c.listWorkspaceEnvVars(),
+    (r) => { const v = (r as { workspace_env_vars?: unknown[] }).workspace_env_vars; return `${v?.length ?? 0} workspace env var(s)`; });
+  reg(t["create-workspace-env-var"], (c, a) => c.createWorkspaceEnvVar({ ...body(a), value: "" }),
+    (r) => { const v = (r as { workspace_env_var?: { key?: string; id?: number } }).workspace_env_var; return v ? `Workspace env var "${v.key}" scaffolded (ID: ${v.id}) — set the value in Settings` : "Workspace env var scaffolded"; });
+  reg(t["list-tool-env-vars"],
+    (c, a) => c.listToolEnvVars((a as { identifier: string }).identifier),
+    (r) => { const v = (r as { tool_env_vars?: unknown[] }).tool_env_vars; return `${v?.length ?? 0} tool env var(s)`; });
+  reg(t["create-tool-env-var"],
+    (c, a) => { const { api_key: _, identifier, ...b } = a as { identifier: string; api_key?: string } & Args; return c.createToolEnvVar(identifier, { ...b, value: "" }); },
+    (r) => { const v = (r as { tool_env_var?: { key?: string; id?: number } }).tool_env_var; return v ? `Tool env var "${v.key}" scaffolded (ID: ${v.id}) — set the value in Settings` : "Tool env var scaffolded"; });
+
   // Folders
   reg(t["create-folder"], (c, a) => c.createFolder(body(a)), () => "Folder created");
   reg(t["edit-folder"],
