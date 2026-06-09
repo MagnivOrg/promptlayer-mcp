@@ -14,6 +14,12 @@ function body(args: Args): Args {
   return rest;
 }
 
+function omit(args: Args, ...keys: string[]): Args {
+  const rest = body(args);
+  for (const key of keys) delete rest[key];
+  return rest;
+}
+
 const TOOL_HANDLERS: Record<string, ToolHandler> = {
   // Prompt Templates
   "get-prompt-template": (c, { api_key: _, prompt_name, ...p }) =>
@@ -46,39 +52,75 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
   "log-request": (c, a) => c.logRequest(body(a)),
   "create-spans-bulk": (c, a) => c.createSpansBulk(body(a)),
 
-  // Datasets
-  "list-datasets": (c, a) => c.listDatasets(body(a)),
-  "create-dataset-group": (c, a) => c.createDatasetGroup(body(a)),
-  "create-dataset-version-from-file": (c, a) => c.createDatasetVersionFromFile(body(a)),
-  "create-dataset-version-from-filter-params": (c, a) => c.createDatasetVersionFromFilterParams(body(a)),
-  "get-dataset-rows": (c, { api_key: _, dataset_id, ...p }) =>
-    c.getDatasetRows(dataset_id as number, p),
-  "create-draft-dataset-version": (c, a) => c.createDraftDatasetVersion(body(a)),
-  "add-request-log-to-dataset": (c, a) => c.addRequestLogToDatasetVersion(body(a)),
-  "add-trace-to-dataset": (c, a) => c.addTraceToDatasetVersion(body(a)),
-  "save-draft-dataset-version": (c, a) => c.saveDraftDatasetVersion(body(a)),
-
-  // Evaluations
-  "list-evaluations": (c, a) => c.listEvaluations(body(a)),
-  "get-evaluation-rows": (c, { api_key: _, evaluation_id, ...p }) =>
-    c.getEvaluationRows(evaluation_id as number, p),
-  "create-report": (c, a) => c.createReport(body(a)),
-  "run-report": (c, { api_key: _, report_id, ...b }) =>
-    c.runReport(report_id as number, b),
-  "get-report": (c, { report_id }) => c.getReport(report_id as number),
-  "get-report-score": (c, { report_id }) => c.getReportScore(report_id as number),
-  "update-report-score-card": (c, { api_key: _, report_id, ...b }) =>
-    c.updateReportScoreCard(report_id as number, b),
-  "rename-report": (c, { api_key: _, report_id, ...b }) =>
-    c.renameReport(report_id as number, b),
-  "delete-report": (c, { report_id }) => c.deleteReport(report_id as number),
-  "delete-reports-by-name": (c, { report_name }) =>
-    c.deleteReportsByName(report_name as string),
-  "add-report-column": (c, a) => c.addReportColumn(body(a)),
-  "edit-report-column": (c, { api_key: _, report_column_id, ...b }) =>
-    c.editReportColumn(report_column_id as number, b),
-  "delete-report-column": (c, { report_column_id }) =>
-    c.deleteReportColumn(report_column_id as number),
+  // Smart Tables
+  "list-smart-tables": (c, a) => c.listSmartTables(body(a)),
+  "create-smart-table": (c, a) => c.createSmartTable(body(a)),
+  "get-smart-table": (c, { table_id }) =>
+    c.getSmartTable(table_id as string),
+  "update-smart-table": (c, a) =>
+    c.updateSmartTable(a.table_id as string, omit(a, "table_id")),
+  "list-smart-table-sheets": (c, a) =>
+    c.listSmartTableSheets(a.table_id as string, omit(a, "table_id")),
+  "create-smart-table-sheet": (c, a) =>
+    c.createSmartTableSheet(a.table_id as string, omit(a, "table_id")),
+  "get-smart-table-sheet": (c, { table_id, sheet_id }) =>
+    c.getSmartTableSheet(table_id as string, sheet_id as string),
+  "update-smart-table-sheet": (c, a) =>
+    c.updateSmartTableSheet(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+  "get-smart-table-sheet-import-operation": (c, { table_id, operation_id }) =>
+    c.getSmartTableSheetImportOperation(table_id as string, operation_id as string),
+  "import-smart-table-sheet-file": (c, a) =>
+    c.importSmartTableSheetFile(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+  "import-smart-table-sheet-request-logs": (c, a) =>
+    c.importSmartTableSheetRequestLogs(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+  "list-smart-table-columns": (c, a) =>
+    c.listSmartTableColumns(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+  "create-smart-table-column": (c, a) =>
+    c.createSmartTableColumn(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+  "update-smart-table-column": (c, a) =>
+    c.updateSmartTableColumn(a.table_id as string, a.sheet_id as string, a.column_id as string, omit(a, "table_id", "sheet_id", "column_id")),
+  "list-smart-table-rows": (c, a) =>
+    c.listSmartTableRows(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+  "add-smart-table-rows": (c, a) =>
+    c.addSmartTableRows(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+  "get-smart-table-cell": (c, { table_id, sheet_id, cell_id }) =>
+    c.getSmartTableCell(table_id as string, sheet_id as string, cell_id as string),
+  "update-smart-table-cell": (c, a) =>
+    c.updateSmartTableCell(a.table_id as string, a.sheet_id as string, a.cell_id as string, omit(a, "table_id", "sheet_id", "cell_id")),
+  "recalculate-smart-table-cell": (c, { table_id, sheet_id, cell_id }) =>
+    c.recalculateSmartTableCell(table_id as string, sheet_id as string, cell_id as string),
+  "recalculate-smart-table-cells": (c, a) =>
+    c.recalculateSmartTableCells(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+  "list-smart-table-operations": (c, { table_id, sheet_id }) =>
+    c.listSmartTableOperations(table_id as string, sheet_id as string),
+  "create-smart-table-operation": (c, a) =>
+    c.createSmartTableOperation(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+  "get-smart-table-operation": (c, { table_id, sheet_id, operation_id }) =>
+    c.getSmartTableOperation(table_id as string, sheet_id as string, operation_id as string),
+  "cancel-smart-table-operation": (c, { table_id, sheet_id, operation_id }) =>
+    c.cancelSmartTableOperation(table_id as string, sheet_id as string, operation_id as string),
+  "get-smart-table-score": (c, { table_id, sheet_id }) =>
+    c.getSmartTableScore(table_id as string, sheet_id as string),
+  "configure-smart-table-score": (c, a) =>
+    c.configureSmartTableScore(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+  "recalculate-smart-table-score": (c, { table_id, sheet_id }) =>
+    c.recalculateSmartTableScore(table_id as string, sheet_id as string),
+  "list-smart-table-versions": (c, a) =>
+    c.listSmartTableVersions(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+  "get-smart-table-version": (c, { table_id, sheet_id, version_id }) =>
+    c.getSmartTableVersion(table_id as string, sheet_id as string, version_id as string),
+  "create-smart-table-version": (c, a) =>
+    c.createSmartTableVersion(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+  "get-smart-table-score-history": (c, a) =>
+    c.getSmartTableScoreHistory(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+  "list-legacy-smart-table-migrations": (c, a) =>
+    c.listLegacySmartTableMigrations(body(a)),
+  "preview-legacy-smart-table-migration": (c, a) =>
+    c.previewLegacySmartTableMigration(body(a)),
+  "migrate-legacy-to-smart-table": (c, a) =>
+    c.migrateLegacyToSmartTable(body(a)),
+  "get-legacy-smart-table-migration-job": (c, { job_id }) =>
+    c.getLegacySmartTableMigrationJob(job_id as string),
 
   // Agents
   "list-workflows": (c, a) => c.listWorkflows(body(a)),
@@ -147,9 +189,10 @@ PromptLayer is a prompt management and observability platform. This MCP server l
 - **Snippet**: A reusable prompt fragment referenced inside prompt templates with @@@snippet_name@@@ markers. Snippets are themselves prompt templates (with type "completion"). When a prompt is fetched, snippets are expanded inline by default.
 - **Release label**: A pointer (e.g. "prod", "staging") attached to a specific prompt version. Move labels between versions for deployment.
 - **Agent** (backend name: workflow): A multi-step pipeline of nodes. Each node has a type, configuration, and dependencies. Agents are versioned like prompts.
-- **Evaluation pipeline** (backend name: report): Runs evaluation columns against a dataset and produces scores. Columns can be LLM assertions, code execution, comparisons, etc.
-- **Dataset**: A versioned collection of test rows. Belongs to a dataset group. Versions can be created from CSV/JSON files or by filtering request log history.
-- **Folder**: Organizes prompts, agents, datasets, evaluations, and other entities into a hierarchy.
+- **Smart Table**: PromptLayer's general-purpose data and computation layer. A table can hold any tabular data and run computed columns over rows. Common uses include evaluations, regression testing, prompt comparisons, and dataset curation.
+- **Smart Table sheet**: A tab inside a Smart Table. Sheets contain rows, columns, cells, operations, score configuration, and saved version snapshots.
+- **Legacy dataset/evaluation**: Older dataset and report resources. Tools remain available for compatibility; prefer Smart Tables for new work.
+- **Folder**: Organizes prompts, agents, Smart Tables, and other entities into a hierarchy.
 
 ## Working with prompts and snippets
 
@@ -159,9 +202,15 @@ When publishing back, keep @@@snippet_name@@@ markers intact in the prompt_templ
 
 Use get-prompt-template (the POST variant) only when you need a fully rendered prompt ready to send to an LLM, with input_variables filled in and provider-specific formatting applied.
 
-## Working with evaluations
+## Working with Smart Tables
 
-The recommended way to create an evaluation pipeline is with LLM assertion columns — these use a language model to score each dataset row. For details on all available column types (LLM assertion, code execution, comparison, etc.), search the PromptLayer docs or see https://docs.promptlayer.com/features/evaluations/column-types.
+Smart Tables are general-purpose — use them for any tabular data and computation: evaluations, regression testing, prompt comparisons, dataset curation, or anything else. A typical flow is: create-smart-table → add a sheet (from a file or by importing historical request logs) → create columns → add rows or import more request logs → run a recalculate operation → optionally configure scoring and save a version snapshot.
+
+To add historical request logs to a table, use import-smart-table-sheet-request-logs (on an existing sheet) or create-smart-table-sheet with source type "request_logs".
+
+Use uppercase column type values such as TEXT, PROMPT_TEMPLATE, LLM_ASSERTION, CODE_EXECUTION, and COMPARE. Direct cell edits are for text cells; computed cells should be recalculated via cell or sheet operation tools.
+
+Use the legacy migration tools to preview or convert existing dataset groups, datasets, and reports into Smart Tables.
 
 ## Additional documentation
 

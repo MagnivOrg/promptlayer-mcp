@@ -65,31 +65,46 @@ export class PromptLayerClient {
   logRequest(body: Body) { return this.post("/log-request", body); }
   createSpansBulk(body: Body) { return this.post("/spans-bulk", body); }
 
-  // Datasets
-  listDatasets(params?: Body) { return this.get("/api/public/v2/datasets", params); }
-  getDatasetRows(id: number, params?: Body) { return this.get(`/api/public/v2/datasets/${id}/rows`, params); }
-  createDatasetGroup(body: Body) { return this.post("/api/public/v2/dataset-groups", body); }
-  createDatasetVersionFromFile(body: Body) { return this.post("/api/public/v2/dataset-versions/from-file", body); }
-  createDatasetVersionFromFilterParams(body: Body) { return this.post("/api/public/v2/dataset-versions/from-filter-params", body); }
-  createDraftDatasetVersion(body: Body) { return this.post("/api/public/v2/dataset-versions/create-draft", body); }
-  addRequestLogToDatasetVersion(body: Body) { return this.post("/api/public/v2/dataset-versions/add-request-log", body); }
-  addTraceToDatasetVersion(body: Body) { return this.post("/api/public/v2/dataset-versions/add-trace", body); }
-  saveDraftDatasetVersion(body: Body) { return this.post("/api/public/v2/dataset-versions/save-draft", body); }
-
-  // Evaluations
-  listEvaluations(params?: Body) { return this.get("/api/public/v2/evaluations", params); }
-  getEvaluationRows(id: number, params?: Body) { return this.get(`/api/public/v2/evaluations/${id}/rows`, params); }
-  createReport(body: Body) { return this.post("/reports", body); }
-  runReport(id: number, body: Body) { return this.post(`/reports/${id}/run`, body); }
-  getReport(id: number) { return this.get(`/reports/${id}`); }
-  getReportScore(id: number) { return this.get(`/reports/${id}/score`); }
-  updateReportScoreCard(id: number, body: Body) { return this.patch(`/reports/${id}/score-card`, body); }
-  renameReport(id: number, body: Body) { return this.patch(`/reports/${id}/rename`, body); }
-  deleteReport(id: number) { return this.del(`/reports/${id}`); }
-  deleteReportsByName(name: string) { return this.del(`/reports/name/${this.enc(name)}`); }
-  addReportColumn(body: Body) { return this.post("/report-columns", body); }
-  editReportColumn(id: number, body: Body) { return this.patch(`/report-columns/${id}`, body); }
-  deleteReportColumn(id: number) { return this.del(`/report-columns/${id}`); }
+  // Smart Tables
+  listSmartTables(params?: Body) { return this.get("/api/public/v2/tables", params); }
+  createSmartTable(body: Body) { return this.post("/api/public/v2/tables", body); }
+  getSmartTable(tableId: string) { return this.get(`/api/public/v2/tables/${this.enc(tableId)}`); }
+  updateSmartTable(tableId: string, body: Body) { return this.patch(`/api/public/v2/tables/${this.enc(tableId)}`, body); }
+  listSmartTableSheets(tableId: string, params?: Body) { return this.get(`/api/public/v2/tables/${this.enc(tableId)}/sheets`, params); }
+  createSmartTableSheet(tableId: string, body: Body) { return this.post(`/api/public/v2/tables/${this.enc(tableId)}/sheets`, body); }
+  getSmartTableSheet(tableId: string, sheetId: string) { return this.get(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}`); }
+  updateSmartTableSheet(tableId: string, sheetId: string, body: Body) { return this.patch(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}`, body); }
+  getSmartTableSheetImportOperation(tableId: string, operationId: string) { return this.get(`/api/public/v2/tables/${this.enc(tableId)}/sheets/operations/${this.enc(operationId)}`); }
+  importSmartTableSheetFile(tableId: string, sheetId: string, body: Body) { return this.post(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/imports/file`, body); }
+  importSmartTableSheetRequestLogs(tableId: string, sheetId: string, body: Body) { return this.post(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/imports/request-logs`, body); }
+  listSmartTableColumns(tableId: string, sheetId: string, params?: Body) { return this.get(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/columns`, params); }
+  createSmartTableColumn(tableId: string, sheetId: string, body: Body) { return this.post(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/columns`, body); }
+  updateSmartTableColumn(tableId: string, sheetId: string, columnId: string, body: Body) { return this.patch(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/columns/${this.enc(columnId)}`, body); }
+  listSmartTableRows(tableId: string, sheetId: string, params?: Body) { return this.get(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/rows`, params); }
+  addSmartTableRows(tableId: string, sheetId: string, body: Body) { return this.post(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/rows`, body); }
+  getSmartTableCell(tableId: string, sheetId: string, cellId: string) { return this.get(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/cells/${this.enc(cellId)}`); }
+  updateSmartTableCell(tableId: string, sheetId: string, cellId: string, body: Body) { return this.patch(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/cells/${this.enc(cellId)}`, body); }
+  recalculateSmartTableCell(tableId: string, sheetId: string, cellId: string) { return this.post(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/cells/${this.enc(cellId)}/recalculate`); }
+  recalculateSmartTableCells(tableId: string, sheetId: string, body: Body) { return this.post(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/cells/recalculate`, body); }
+  listSmartTableOperations(tableId: string, sheetId: string) { return this.get(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/operations`); }
+  createSmartTableOperation(tableId: string, sheetId: string, body: Body) { return this.post(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/operations`, body); }
+  getSmartTableOperation(tableId: string, sheetId: string, operationId: string) { return this.get(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/operations/${this.enc(operationId)}`); }
+  cancelSmartTableOperation(tableId: string, sheetId: string, operationId: string) { return this.del(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/operations/${this.enc(operationId)}`); }
+  getSmartTableScore(tableId: string, sheetId: string) { return this.get(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/score`); }
+  configureSmartTableScore(tableId: string, sheetId: string, body: Body) { return this.patch(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/score`, body); }
+  recalculateSmartTableScore(tableId: string, sheetId: string) { return this.post(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/score`); }
+  listSmartTableVersions(tableId: string, sheetId: string, params?: Body) { return this.get(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/versions`, params); }
+  getSmartTableVersion(tableId: string, sheetId: string, versionId: string) { return this.get(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/versions/${this.enc(versionId)}`); }
+  createSmartTableVersion(tableId: string, sheetId: string, body: Body) { return this.post(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/versions`, body); }
+  getSmartTableScoreHistory(tableId: string, sheetId: string, params?: Body) { return this.get(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/versions/score-history`, params); }
+  listLegacySmartTableMigrations(params?: Body) {
+    const query = params ? { ...params } : undefined;
+    if (query && typeof query.source_id === "number") query.source_id = [query.source_id];
+    return this.get("/api/public/v2/tables/legacy-migrations", query);
+  }
+  previewLegacySmartTableMigration(params: Body) { return this.get("/api/public/v2/tables/legacy-migrations/preview", params); }
+  migrateLegacyToSmartTable(body: Body) { return this.post("/api/public/v2/tables/legacy-migrations", body); }
+  getLegacySmartTableMigrationJob(jobId: string) { return this.get(`/api/public/v2/tables/legacy-migrations/jobs/${this.enc(jobId)}`); }
 
   // Agents
   listWorkflows(params?: Body) { return this.get("/workflows", params); }

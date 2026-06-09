@@ -191,39 +191,7 @@ export const CreateSpansBulkArgsSchema = z.object({
 });
 
 
-// ── List Datasets (GET /api/public/v2/datasets) ──────────────────────────
-
-export const ListDatasetsArgsSchema = z.object({
-  page: z.number().int().optional().describe("Page number (default: 1)"),
-  per_page: z.number().int().optional().describe("Items per page (default: 10)"),
-  name: z.string().optional().describe("Filter by dataset group name (case-insensitive partial match)"),
-  status: z.enum(["active", "deleted", "all"]).optional().describe("Filter by status (default: 'active')"),
-  dataset_group_id: z.number().int().optional().describe("Filter by dataset group ID"),
-  prompt_id: z.number().int().optional().describe("Filter by prompt ID"),
-  prompt_version_id: z.number().int().optional().describe("Filter by prompt version ID"),
-  prompt_label_id: z.number().int().optional().describe("Filter by prompt label ID"),
-  report_id: z.number().int().optional().describe("Filter by report ID"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Create Dataset Group (POST /api/public/v2/dataset-groups) ────────────
-
-export const CreateDatasetGroupArgsSchema = z.object({
-  name: z.string().optional().describe("Dataset group name (unique within workspace). Auto-generated if omitted."),
-  folder_id: z.number().int().optional().describe("Folder ID to place the dataset group into"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Create Dataset Version from File (POST /api/public/v2/dataset-versions/from-file)
-
-export const CreateDatasetVersionFromFileArgsSchema = z.object({
-  dataset_group_id: z.number().int().describe("Dataset group ID"),
-  file_name: z.string().describe("File name with extension (e.g. 'data.csv' or 'data.json')"),
-  file_content_base64: z.string().describe("Base64-encoded file content"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Structured filter primitives (shared by request search + dataset-from-history) ──
+// ── Structured filter primitives (shared by request search + Smart Table imports) ──
 // NOTE: value/filters use loose types (z.unknown()) because the backend validates
 // operator-field compatibility at runtime. This is tracked as a known exception in
 // scripts/diff-endpoints.ts.
@@ -256,194 +224,6 @@ const StructuredFilterGroupSchema: z.ZodType = z.object({
   filters: z.array(z.union([StructuredFilterSchema, z.lazy(() => StructuredFilterGroupSchema)])).describe("Filters or nested filter groups"),
 });
 
-// ── Create Dataset Version from Filter Params (POST /api/public/v2/dataset-versions/from-filter-params)
-
-export const CreateDatasetVersionFromFilterParamsArgsSchema = z.object({
-  dataset_group_id: z.number().int().describe("Dataset group ID to create the new version under"),
-  request_log_ids: z.array(z.number().int().positive()).optional().describe(
-    "Static snapshot mode: pin the dataset to an explicit list of request log IDs (capped at 50,000). " +
-    "≤50 IDs run synchronously; >50 are processed asynchronously. " +
-    "Datasets created this way are not refreshable."
-  ),
-  filter_group: StructuredFilterGroupSchema.optional().describe(
-    "Structured filter mode: same shape as search-request-logs (AND/OR groups of field/operator/value filters). " +
-    "Always processed asynchronously. Persisted on the dataset so refresh_dataset can replay it."
-  ),
-  q: z.string().optional().describe("Free-text search query applied alongside filter_group"),
-  sort_by: z.enum([
-    "request_start_time", "input_tokens", "output_tokens", "cost",
-    "latency_ms", "status", "turn_count", "tool_call_count",
-  ]).optional().describe("Sort field"),
-  sort_order: z.enum(["asc", "desc"]).optional().describe("Sort direction (defaults to desc when sort_by is set)"),
-  variables_to_parse: z.array(z.string()).optional().describe("Input variable names to extract as dataset columns"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-
-// ── Get Dataset Rows (GET /api/public/v2/datasets/{dataset_id}/rows) ─────
-
-export const GetDatasetRowsArgsSchema = z.object({
-  dataset_id: z.number().int().describe("The ID of the dataset to retrieve rows from"),
-  page: z.number().int().optional().describe("Page number (default: 1)"),
-  per_page: z.number().int().optional().describe("Rows per page (default: 10, max: 100)"),
-  q: z.string().optional().describe("Search query for filtering rows"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Create Draft Dataset Version (POST /api/public/v2/dataset-versions/create-draft) ─────
-
-export const CreateDraftDatasetVersionArgsSchema = z.object({
-  dataset_group_id: z.number().int().describe("ID of the dataset group to create a draft version for"),
-  source_dataset_id: z.number().int().optional().describe("Optional ID of an existing dataset version to copy rows from. Must belong to the same dataset group."),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Add Request Log to Draft Dataset (POST /api/public/v2/dataset-versions/add-request-log) ─────
-
-export const AddRequestLogToDatasetVersionArgsSchema = z.object({
-  dataset_group_id: z.number().int().describe("ID of the dataset group containing the draft"),
-  request_log_id: z.number().int().describe("ID of the request log to add as a dataset row"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Save Draft Dataset Version (POST /api/public/v2/dataset-versions/save-draft) ─────
-
-export const SaveDraftDatasetVersionArgsSchema = z.object({
-  dataset_group_id: z.number().int().describe("ID of the dataset group containing the draft to save"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Add Trace to Draft Dataset (POST /api/public/v2/dataset-versions/add-trace) ─────
-
-export const AddTraceToDatasetVersionArgsSchema = z.object({
-  dataset_group_id: z.number().int().min(1).describe("ID of the dataset group containing the draft"),
-  trace_id: z.string().min(1).describe("ID of the trace to add as a dataset row"),
-  span_id: z.string().min(1).optional().describe("Optional span ID to anchor the row on a specific span subtree instead of the full trace"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── List Evaluations (GET /api/public/v2/evaluations) ────────────────────
-
-export const ListEvaluationsArgsSchema = z.object({
-  page: z.number().int().optional().describe("Page number (default: 1)"),
-  per_page: z.number().int().optional().describe("Items per page (default: 10)"),
-  name: z.string().optional().describe("Filter by name (case-insensitive partial match)"),
-  status: z.enum(["active", "deleted", "all"]).optional().describe("Filter by status (default: 'active')"),
-  include_runs: z.boolean().optional().describe("If true, include batch runs nested under each evaluation with status and cell status counts (default: false)"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Get Evaluation Rows (GET /api/public/v2/evaluations/{evaluation_id}/rows)
-
-export const GetEvaluationRowsArgsSchema = z.object({
-  evaluation_id: z.number().int().describe("The ID of the evaluation to retrieve rows from"),
-  page: z.number().int().optional().describe("Page number (default: 1)"),
-  per_page: z.number().int().optional().describe("Rows per page (default: 10, max: 100)"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Create Evaluation Pipeline / Report (POST /reports) ──────────────────
-
-export const CreateReportArgsSchema = z.object({
-  dataset_group_id: z.number().int().describe("Dataset group ID"),
-  name: z.string().optional().describe("Pipeline name (auto-generated if omitted)"),
-  folder_id: z.number().int().optional().describe("Folder ID for organization"),
-  dataset_version_number: z.number().int().optional().describe("Dataset version (uses latest if omitted)"),
-  columns: z.array(z.record(z.unknown())).optional().describe("Evaluation columns (each: column_type, name, configuration)"),
-  score_configuration: z.record(z.unknown()).optional().describe("Custom scoring logic configuration"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Run Evaluation (POST /reports/{report_id}/run) ───────────────────────
-
-export const RunReportArgsSchema = z.object({
-  report_id: z.number().int().describe("Evaluation pipeline ID"),
-  name: z.string().describe("Name for this evaluation run"),
-  dataset_id: z.number().int().optional().describe("Override dataset ID"),
-  refresh_dataset: z.boolean().optional().describe("Refresh the dataset before running"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Get Evaluation (GET /reports/{report_id}) ────────────────────────────
-
-export const GetReportArgsSchema = z.object({
-  report_id: z.number().int().describe("Evaluation pipeline ID"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Get Evaluation Score (GET /reports/{report_id}/score) ────────────────
-
-export const GetReportScoreArgsSchema = z.object({
-  report_id: z.number().int().describe("Evaluation pipeline ID"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Configure Custom Scoring (PATCH /reports/{report_id}/score-card) ─────
-// NOTE: This endpoint is in the PromptLayer reference docs but NOT in the
-// OpenAPI spec. Tracked as a known exception in scripts/diff-endpoints.ts.
-// See: https://docs.promptlayer.com/reference/update-report-score-card
-
-export const UpdateReportScoreCardArgsSchema = z.object({
-  report_id: z.number().int().describe("Evaluation pipeline ID"),
-  column_names: z.array(z.string()).describe("Column names to include in score"),
-  code: z.string().optional().describe("Custom Python/JavaScript code for score calculation"),
-  code_language: z.enum(["PYTHON", "JAVASCRIPT"]).optional().describe("Code language (default: PYTHON)"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Delete Reports by Name (DELETE /reports/name/{report_name}) ──────────
-
-export const DeleteReportsByNameArgsSchema = z.object({
-  report_name: z.string().describe("Name of reports to archive"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Delete Report by ID (DELETE /reports/{report_id}) ────────────────────
-
-export const DeleteReportArgsSchema = z.object({
-  report_id: z.number().int().describe("Evaluation pipeline ID to archive"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Rename Report (PATCH /reports/{report_id}/rename) ────────────────────
-
-export const RenameReportArgsSchema = z.object({
-  report_id: z.number().int().describe("Evaluation pipeline ID to rename"),
-  name: z.string().min(1).max(255).optional().describe("New name for the evaluation pipeline. Provide name, tags, or both."),
-  tags: z.array(z.string()).optional().describe("Replace the pipeline's tags. Pass an empty array to clear them. Provide name, tags, or both."),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Add Report Column (POST /report-columns) ─────────────────────────────
-
-export const AddReportColumnArgsSchema = z.object({
-  report_id: z.number().int().describe("Evaluation pipeline ID to add the column to"),
-  column_type: z.string().describe("Column type (e.g. LLM_ASSERTION, CODE_EXECUTION, PROMPT_TEMPLATE). See https://docs.promptlayer.com/features/evaluations/column-types"),
-  name: z.string().min(1).describe("Unique column name within the pipeline"),
-  configuration: z.record(z.unknown()).describe("Column-type-specific configuration"),
-  position: z.number().int().positive().optional().describe("Position in the pipeline (auto-assigned if omitted). Cannot overwrite dataset columns."),
-  is_part_of_score: z.boolean().optional().describe("Whether this column contributes to the score (default false)"),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Edit Report Column (PATCH /report-columns/{report_column_id}) ────────
-
-export const EditReportColumnArgsSchema = z.object({
-  report_column_id: z.number().int().describe("Report column ID to edit"),
-  report_id: z.number().int().describe("Parent evaluation pipeline ID (must match the column's report)"),
-  column_type: z.string().describe("Column type (e.g. LLM_ASSERTION, CODE_EXECUTION, PROMPT_TEMPLATE). DATASET is not allowed."),
-  configuration: z.record(z.unknown()).optional().describe("Replacement column configuration"),
-  name: z.string().min(1).optional().describe("New column name (must be unique within the pipeline)"),
-  position: z.number().int().positive().optional().describe("New position. Cannot overwrite dataset columns."),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
-
-// ── Delete Report Column (DELETE /report-columns/{report_column_id}) ─────
-
-export const DeleteReportColumnArgsSchema = z.object({
-  report_column_id: z.number().int().describe("Report column ID to delete. Cannot be a DATASET column."),
-  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
-});
 
 
 // ── List Agents (GET /workflows) ─────────────────────────────────────────
@@ -820,6 +600,363 @@ export const GetRequestSearchSuggestionsArgsSchema = z.object({
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
+// ── Smart Tables (public v2) ────────────────────────────────────────────
+
+const UuidSchema = z.string().uuid();
+const CursorPaginationShape = {
+  cursor: z.string().optional().describe("Pagination cursor from a previous response"),
+  limit: z.number().int().min(1).max(100).optional().describe("Items per page (1-100)"),
+};
+const SmartTablePromptFilterShape = {
+  prompt_id: z.number().int().positive().optional().describe("Filter to tables/sheets that reference this prompt"),
+  prompt_version_id: z.number().int().positive().optional().describe("Filter to tables/sheets that reference this prompt version"),
+  prompt_label_id: z.number().int().positive().optional().describe("Filter to tables/sheets that reference this prompt label"),
+};
+const SmartTableColumnTypeSchema = z.enum([
+  "TEXT",
+  "ABSOLUTE_NUMERIC_DISTANCE",
+  "AI_DATA_EXTRACTION",
+  "APPLY_DIFF",
+  "ASSERT_VALID",
+  "COALESCE",
+  "CONDITION",
+  "CODE_EXECUTION",
+  "COMBINE_COLUMNS",
+  "COMPARE",
+  "COMPOSITION",
+  "CONTAINS",
+  "CONVERSATION_SIMULATOR",
+  "COSINE_SIMILARITY",
+  "COUNT",
+  "DATASET",
+  "ENDPOINT",
+  "FOR_LOOP",
+  "HUMAN",
+  "JSON_PATH",
+  "LLM_ASSERTION",
+  "MATH_OPERATOR",
+  "MCP",
+  "MIN_MAX",
+  "PARSE_VALUE",
+  "PROMPT_TEMPLATE",
+  "REGEX",
+  "REGEX_EXTRACTION",
+  "VARIABLE",
+  "WHILE_LOOP",
+  "WORKFLOW",
+  "XML_PATH",
+]).describe("Smart Table column type. Use uppercase backend enum values.");
+const SmartCellStatusSchema = z.enum(["STALE", "QUEUED", "DISPATCHED", "RUNNING", "COMPLETED", "FAILED"]);
+const SmartTableColumnDependencySchema = z.object({
+  column_id: UuidSchema.describe("Source column UUID"),
+  reference_type: z.string().optional().describe("Dependency reference type, usually 'value'"),
+  config_key: z.string().optional().describe("Optional config key this dependency feeds"),
+  config_meta: z.record(z.unknown()).optional().describe("Optional dependency metadata"),
+});
+const SmartTableRequestLogImportBaseShape = {
+  request_log_ids: z.array(z.number().int().positive()).optional().describe("Explicit request log IDs to import"),
+  filter_group: StructuredFilterGroupSchema.optional().describe("Structured request log filters. Provide this or request_log_ids."),
+  q: z.string().optional().describe("Free-text request log search applied with filter_group"),
+  sort_by: z.string().optional().describe("Request log sort field"),
+  sort_order: z.enum(["asc", "desc"]).optional().describe("Request log sort direction"),
+  metadata_cost_breakdown_key: z.string().optional().describe("Optional metadata key used for cost breakdown filtering"),
+  variables_to_parse: z.array(z.string()).optional().describe("Input variable names to extract as columns"),
+  include_fields: z.array(z.string()).optional().describe("Additional request fields to include as imported columns"),
+  limit: z.number().int().positive().optional().describe("Maximum number of matching request logs to import"),
+};
+const SmartTableSheetFileSourceSchema = z.object({
+  type: z.literal("file"),
+  file_name: z.string().min(1).max(255).describe("CSV or JSON file name for a new sheet import"),
+  file_content_base64: z.string().min(1).describe("Base64-encoded file content"),
+});
+const SmartTableSheetRequestLogsSourceSchema = z.object({
+  type: z.literal("request_logs"),
+  ...SmartTableRequestLogImportBaseShape,
+});
+
+export const ListSmartTablesArgsSchema = z.object({
+  folder_id: z.number().int().positive().optional().describe("Filter by folder ID"),
+  name: z.string().optional().describe("Filter by table title"),
+  ...CursorPaginationShape,
+  sort: z.enum(["created_at"]).optional().describe("Sort field (default: created_at)"),
+  order: z.enum(["asc", "desc"]).optional().describe("Sort direction (default: desc)"),
+  ...SmartTablePromptFilterShape,
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const CreateSmartTableArgsSchema = z.object({
+  title: z.string().min(1).max(255).optional().describe("Table title. Omit for an auto-generated Untitled Table name."),
+  folder_id: z.number().int().positive().optional().describe("Folder ID to place the table into"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const GetSmartTableArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const UpdateSmartTableArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  title: z.string().min(1).max(255).optional().describe("New table title"),
+  folder_id: z.number().int().positive().optional().describe("Folder ID, or omit to leave unchanged"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const ListSmartTableSheetsArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  ...CursorPaginationShape,
+  sort: z.enum(["index"]).optional().describe("Sort field (default: index)"),
+  order: z.enum(["asc", "desc"]).optional().describe("Sort direction (default: asc)"),
+  ...SmartTablePromptFilterShape,
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const CreateSmartTableSheetArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  title: z.string().min(1).max(255).optional().describe("Sheet title"),
+  index: z.number().int().min(0).optional().describe("Sheet index"),
+  operation_id: z.string().min(1).max(255).optional().describe("Optional idempotency/status operation ID"),
+  source: z.discriminatedUnion("type", [
+    SmartTableSheetFileSourceSchema,
+    SmartTableSheetRequestLogsSourceSchema,
+  ]).describe("Source for the new sheet: file or request_logs"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const GetSmartTableSheetArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const UpdateSmartTableSheetArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  title: z.string().min(1).max(255).optional().describe("New sheet title"),
+  index: z.number().int().min(0).optional().describe("New sheet index"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const GetSmartTableSheetImportOperationArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  operation_id: z.string().min(1).describe("Import operation ID"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const ImportSmartTableSheetFileArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  operation_id: z.string().optional().describe("Optional idempotency/status operation ID"),
+  file_name: z.string().min(1).max(255).describe("CSV file name"),
+  file_content_base64: z.string().min(1).describe("Base64-encoded CSV content"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const ImportSmartTableSheetRequestLogsArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  operation_id: z.string().optional().describe("Optional idempotency/status operation ID"),
+  ...SmartTableRequestLogImportBaseShape,
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const ListSmartTableColumnsArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  ...CursorPaginationShape,
+  sort: z.enum(["position_rank"]).optional().describe("Sort field (default: position_rank)"),
+  order: z.enum(["asc", "desc"]).optional().describe("Sort direction (default: asc)"),
+  include_system_columns: z.boolean().optional().describe("Include system columns in the response"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const CreateSmartTableColumnArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  title: z.string().min(1).max(255).describe("Column title"),
+  type: SmartTableColumnTypeSchema,
+  config: z.record(z.unknown()).nullable().optional().describe("Column-type-specific configuration"),
+  dependencies: z.array(SmartTableColumnDependencySchema).nullable().optional().describe("Column dependencies"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const UpdateSmartTableColumnArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  column_id: UuidSchema.describe("Column UUID"),
+  title: z.string().min(1).max(255).optional().describe("New column title"),
+  config: z.record(z.unknown()).nullable().optional().describe("Replacement column configuration"),
+  dependencies: z.array(SmartTableColumnDependencySchema).nullable().optional().describe("Replacement column dependencies"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const ListSmartTableRowsArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  ...CursorPaginationShape,
+  sort: z.enum(["row_index"]).optional().describe("Sort field (default: row_index)"),
+  order: z.enum(["asc", "desc"]).optional().describe("Sort direction (default: asc)"),
+  include_columns: z.boolean().optional().describe("Include column metadata"),
+  include_row_count: z.boolean().optional().describe("Include total row count"),
+  include_system_columns: z.boolean().optional().describe("Include system columns"),
+  include_execution_metadata_aggregates: z.boolean().optional().describe("Include execution metadata aggregates"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const AddSmartTableRowsArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  count: z.number().int().min(1).max(100).optional().describe("Number of rows to add (default: 1, max: 100)"),
+  values: z.array(z.record(z.unknown())).max(100).optional().describe("Optional row values, keyed by column UUID"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const GetSmartTableCellArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  cell_id: UuidSchema.describe("Cell UUID"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const UpdateSmartTableCellArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  cell_id: UuidSchema.describe("Cell UUID"),
+  display_value: z.string().nullable().optional().describe("Text to display for a text cell"),
+  value: z.unknown().optional().describe("Structured cell value"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const RecalculateSmartTableCellArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  cell_id: UuidSchema.describe("Cell UUID"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const RecalculateSmartTableCellsArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  cell_ids: z.array(UuidSchema).min(1).describe("Cell UUIDs to recalculate"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const ListSmartTableOperationsArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const CreateSmartTableOperationArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  operation: z.enum(["recalculate"]).optional().describe("Operation to run (default: recalculate)"),
+  column_ids: z.array(UuidSchema).optional().describe("Limit recalculation to these column UUIDs"),
+  row_ids: z.array(z.number().int()).optional().describe("Limit recalculation to these row IDs"),
+  statuses: z.array(SmartCellStatusSchema).optional().describe("Cell statuses to recalculate. Empty array means no status filter."),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const GetSmartTableOperationArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  operation_id: z.string().min(1).describe("Operation/execution ID"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const CancelSmartTableOperationArgsSchema = GetSmartTableOperationArgsSchema;
+
+export const GetSmartTableScoreArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const ConfigureSmartTableScoreArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  score_type: z.enum(["auto", "boolean", "numeric", "custom"]).optional().describe("Score configuration type"),
+  score_config: z.record(z.unknown()).optional().describe("Full backend score configuration"),
+  column_ids: z.array(UuidSchema).optional().describe("Column UUIDs to include in the score"),
+  column_names: z.array(z.string()).optional().describe("Column names to include in the score"),
+  code: z.string().min(1).max(50000).optional().describe("Custom score code. Implies score_type=custom."),
+  code_language: z.enum(["PYTHON", "JAVASCRIPT"]).optional().describe("Custom score code language (default: PYTHON)"),
+  true_values: z.array(z.string()).optional().describe("Values treated as true for boolean scoring"),
+  false_values: z.array(z.string()).optional().describe("Values treated as false for boolean scoring"),
+  assertion_aggregation: z.enum(["all", "any", "mean"]).optional().describe("How boolean assertions are aggregated"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const RecalculateSmartTableScoreArgsSchema = GetSmartTableScoreArgsSchema;
+
+export const ListSmartTableVersionsArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  ...CursorPaginationShape,
+  sort: z.enum(["version_number"]).optional().describe("Sort field (default: version_number)"),
+  order: z.enum(["asc", "desc"]).optional().describe("Sort direction (default: desc)"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const GetSmartTableVersionArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  version_id: UuidSchema.describe("Version UUID"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const CreateSmartTableVersionArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  name: z.string().min(1).max(255).optional().describe("Name for a new snapshot version"),
+  source_version_id: UuidSchema.optional().describe("Existing version UUID to restore"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const GetSmartTableScoreHistoryArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  max_points: z.number().int().min(50).max(5000).optional().describe("Maximum score-history points (default: 1200)"),
+  range: z.string().optional().describe("Score-history range, e.g. all, last_25, last_50, last_100, last_250"),
+  resolution: z.string().optional().describe("Score-history resolution (default: auto)"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+const LegacySmartTableMigrationSourceTypeSchema = z.enum(["dataset_group", "dataset", "report"]);
+
+export const ListLegacySmartTableMigrationsArgsSchema = z.object({
+  source_type: LegacySmartTableMigrationSourceTypeSchema.optional().describe("Legacy source type to filter by"),
+  source_id: z.union([
+    z.number().int().positive(),
+    z.array(z.number().int().positive()),
+  ]).optional().describe("One or more legacy source IDs. Requires source_type."),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const PreviewLegacySmartTableMigrationArgsSchema = z.object({
+  source_type: LegacySmartTableMigrationSourceTypeSchema.describe("Legacy source type"),
+  source_id: z.number().int().positive().describe("Legacy source ID"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const MigrateLegacyToSmartTableArgsSchema = z.object({
+  source_type: LegacySmartTableMigrationSourceTypeSchema.describe("Legacy source type"),
+  source_id: z.number().int().positive().describe("Legacy source ID"),
+  force: z.boolean().optional().describe("Force remigration of an already migrated source"),
+  dry_run: z.boolean().optional().describe("Preview migration work without writing data"),
+  resume: z.boolean().optional().describe("Resume prior migration progress when available"),
+  continue_on_error: z.boolean().optional().describe("Continue migration after row/column-level errors"),
+  include_reports_with_missing_datasets: z.boolean().optional().describe("Include reports even if their datasets are missing"),
+  max_version_snapshot_cells: z.number().int().min(0).optional().describe("Maximum cells to snapshot per migrated version"),
+  report_preview_row_limit: z.number().int().min(0).optional().describe("Rows to include in migrated report previews"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const GetLegacySmartTableMigrationJobArgsSchema = z.object({
+  job_id: z.string().min(1).describe("Legacy Smart Table migration job ID"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
 
 export type GetPromptTemplateParams = Omit<
   z.infer<typeof GetPromptTemplateArgsSchema>,
@@ -981,145 +1118,257 @@ export const TOOL_DEFINITIONS = {
     annotations: { readOnlyHint: false },
   },
 
-  // ── Datasets ────────────────────────────────────────────────────────
-  "list-datasets": {
-    name: "list-datasets",
-    description: "List datasets with pagination. Filter by name, status, dataset_group_id, prompt_id, report_id, etc.",
-    inputSchema: ListDatasetsArgsSchema,
-    annotations: { readOnlyHint: true },
-  },
-  "create-dataset-group": {
-    name: "create-dataset-group",
-    description: "Create a dataset group. An empty draft version (version_number=-1) is created automatically. Names must be unique per workspace.",
-    inputSchema: CreateDatasetGroupArgsSchema,
-    annotations: { readOnlyHint: false },
-  },
-  "create-dataset-version-from-file": {
-    name: "create-dataset-version-from-file",
-    description: "Create a dataset version by uploading base64-encoded CSV/JSON content. Processed asynchronously. Max 100MB.",
-    inputSchema: CreateDatasetVersionFromFileArgsSchema,
-    annotations: { readOnlyHint: false },
-  },
-  "create-dataset-version-from-filter-params": {
-    name: "create-dataset-version-from-filter-params",
+  // ── Smart Tables ───────────────────────────────────────────────────
+  "list-smart-tables": {
+    name: "list-smart-tables",
     description:
-      "Create a dataset version from request log history. Two modes:\n" +
-      "  1. request_log_ids — pin to an explicit list of IDs (≤50 sync, >50 async). Snapshot, not refreshable.\n" +
-      "  2. filter_group (+ optional q) — structured AND/OR filter, same shape as search-request-logs. " +
-      "Async; persisted on the dataset so refresh_dataset can replay it.\n" +
-      "Use variables_to_parse to extract specific input variables as dataset columns.",
-    inputSchema: CreateDatasetVersionFromFilterParamsArgsSchema,
-    annotations: { readOnlyHint: false },
-  },
-  "get-dataset-rows": {
-    name: "get-dataset-rows",
-    description: "Get paginated rows from a dataset. Each row is an array of cells with {type: 'dataset', value: ...}. Supports search via the q parameter.",
-    inputSchema: GetDatasetRowsArgsSchema,
+      "List Smart Tables with cursor pagination. Smart Tables are PromptLayer's general-purpose data and " +
+      "computation layer — use them to organise test datasets, run prompt templates across rows, assert " +
+      "on outputs, compare results, build evaluations, or track regression over time. " +
+      "Filter by folder, title, or referenced prompt.",
+    inputSchema: ListSmartTablesArgsSchema,
     annotations: { readOnlyHint: true },
   },
-  "create-draft-dataset-version": {
-    name: "create-draft-dataset-version",
-    description: "Create a draft dataset version for a dataset group. Optionally copy rows from an existing version. Only one draft can exist per group.",
-    inputSchema: CreateDraftDatasetVersionArgsSchema,
+  "create-smart-table": {
+    name: "create-smart-table",
+    description:
+      "Create a Smart Table. Tables are general-purpose — they can hold any tabular data and run " +
+      "computed columns (PROMPT_TEMPLATE, LLM_ASSERTION, CODE_EXECUTION, COMPARE, etc.) over rows. " +
+      "Common uses include evaluations, regression testing, prompt comparisons, and dataset curation. " +
+      "After creating a table, add a sheet, then add columns and rows (or import request logs).",
+    inputSchema: CreateSmartTableArgsSchema,
     annotations: { readOnlyHint: false },
   },
-  "add-request-log-to-dataset": {
-    name: "add-request-log-to-dataset",
-    description: "Add a request log as a row to the draft dataset version. Extracts input variables, metadata, scores, tags, prompt, and response. Requires create-draft first.",
-    inputSchema: AddRequestLogToDatasetVersionArgsSchema,
-    annotations: { readOnlyHint: false },
-  },
-  "save-draft-dataset-version": {
-    name: "save-draft-dataset-version",
-    description: "Publish a draft dataset version by assigning it a real version number. Processed asynchronously.",
-    inputSchema: SaveDraftDatasetVersionArgsSchema,
-    annotations: { readOnlyHint: false },
-  },
-  "add-trace-to-dataset": {
-    name: "add-trace-to-dataset",
-    description: "Add a trace as a row to the draft dataset version. Pass span_id to anchor on a specific span subtree instead of the full trace root. Requires create-draft first.",
-    inputSchema: AddTraceToDatasetVersionArgsSchema,
-    annotations: { readOnlyHint: false },
-  },
-
-  // ── Evaluations ─────────────────────────────────────────────────────
-  "list-evaluations": {
-    name: "list-evaluations",
-    description: "List evaluation pipelines (called 'reports' in the API) with pagination. Filter by name, status. Set include_runs=true to include batch runs nested under each evaluation.",
-    inputSchema: ListEvaluationsArgsSchema,
+  "get-smart-table": {
+    name: "get-smart-table",
+    description: "Get a Smart Table by UUID, including sheet counts and row counts.",
+    inputSchema: GetSmartTableArgsSchema,
     annotations: { readOnlyHint: true },
   },
-  "get-evaluation-rows": {
-    name: "get-evaluation-rows",
-    description: "Get paginated evaluation results with dataset inputs and eval outcomes. Each row has dataset cells ({type: 'dataset', value: ...}) followed by eval cells ({type: 'eval', status: 'PASSED'|'FAILED', value: ...}).",
-    inputSchema: GetEvaluationRowsArgsSchema,
+  "update-smart-table": {
+    name: "update-smart-table",
+    description: "Update a Smart Table title or folder.",
+    inputSchema: UpdateSmartTableArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "list-smart-table-sheets": {
+    name: "list-smart-table-sheets",
+    description: "List sheets in a Smart Table with cursor pagination.",
+    inputSchema: ListSmartTableSheetsArgsSchema,
     annotations: { readOnlyHint: true },
   },
-  "create-report": {
-    name: "create-report",
-    description: "Create an evaluation pipeline (called 'report' in the API) linked to a dataset group. The recommended approach is to add LLM assertion columns that use a language model to score each row. For all available column types, search the PromptLayer docs or visit https://docs.promptlayer.com/features/evaluations/column-types.",
-    inputSchema: CreateReportArgsSchema,
+  "create-smart-table-sheet": {
+    name: "create-smart-table-sheet",
+    description:
+      "Add a sheet (tab) to a Smart Table. Two source types:\n" +
+      "  - file: seed rows from a base64-encoded CSV or JSON file.\n" +
+      "  - request_logs: import historical request logs from PromptLayer by filter or explicit IDs — " +
+      "    use this to build datasets from real production traffic for evaluation or analysis.",
+    inputSchema: CreateSmartTableSheetArgsSchema,
     annotations: { readOnlyHint: false },
   },
-  "run-report": {
-    name: "run-report",
-    description: "Execute an evaluation pipeline. Runs all columns against the dataset and produces scores. Name is required.",
-    inputSchema: RunReportArgsSchema,
-    annotations: { readOnlyHint: false },
-  },
-  "get-report": {
-    name: "get-report",
-    description: "Get evaluation pipeline details including columns and configuration. Use get-report-score for the computed score.",
-    inputSchema: GetReportArgsSchema,
+  "get-smart-table-sheet": {
+    name: "get-smart-table-sheet",
+    description: "Get a single Smart Table sheet.",
+    inputSchema: GetSmartTableSheetArgsSchema,
     annotations: { readOnlyHint: true },
   },
-  "get-report-score": {
-    name: "get-report-score",
-    description: "Get the computed score for an evaluation pipeline.",
-    inputSchema: GetReportScoreArgsSchema,
+  "update-smart-table-sheet": {
+    name: "update-smart-table-sheet",
+    description: "Update a Smart Table sheet title or index.",
+    inputSchema: UpdateSmartTableSheetArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "get-smart-table-sheet-import-operation": {
+    name: "get-smart-table-sheet-import-operation",
+    description: "Get status for a Smart Table sheet import operation.",
+    inputSchema: GetSmartTableSheetImportOperationArgsSchema,
     annotations: { readOnlyHint: true },
   },
-  "update-report-score-card": {
-    name: "update-report-score-card",
-    description: "Configure custom scoring for an evaluation pipeline. Specify which column_names contribute to the score, with optional custom code.",
-    inputSchema: UpdateReportScoreCardArgsSchema,
+  "import-smart-table-sheet-file": {
+    name: "import-smart-table-sheet-file",
+    description: "Import base64 CSV content into an existing Smart Table sheet.",
+    inputSchema: ImportSmartTableSheetFileArgsSchema,
     annotations: { readOnlyHint: false },
   },
-  "delete-reports-by-name": {
-    name: "delete-reports-by-name",
-    description: "Archive all evaluation pipelines matching the given name.",
-    inputSchema: DeleteReportsByNameArgsSchema,
+  "import-smart-table-sheet-request-logs": {
+    name: "import-smart-table-sheet-request-logs",
+    description:
+      "Import historical request logs from PromptLayer into a Smart Table sheet. Provide either explicit " +
+      "request_log_ids or a filter_group (same syntax as search-request-logs — filter by model, prompt, " +
+      "metadata, date range, status, etc.). Use this to add production traffic rows to a table for " +
+      "evaluation, comparison, or any other analysis.",
+    inputSchema: ImportSmartTableSheetRequestLogsArgsSchema,
     annotations: { readOnlyHint: false },
   },
-  "delete-report": {
-    name: "delete-report",
-    description: "Archive a single evaluation pipeline by ID. Prefer this over delete-reports-by-name when you have the report_id, since names can collide.",
-    inputSchema: DeleteReportArgsSchema,
+  "list-smart-table-columns": {
+    name: "list-smart-table-columns",
+    description: "List columns in a Smart Table sheet.",
+    inputSchema: ListSmartTableColumnsArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "create-smart-table-column": {
+    name: "create-smart-table-column",
+    description:
+      "Add a column to a Smart Table sheet. Common types:\n" +
+      "  - PROMPT_TEMPLATE: run a prompt template against each row (e.g. regression testing or A/B comparison).\n" +
+      "  - LLM_ASSERTION: use an LLM to judge or assert something about a row's values.\n" +
+      "  - CODE_EXECUTION: run custom Python/JS logic per row.\n" +
+      "  - COMPARE: compare two column values side-by-side.\n" +
+      "  - CONTAINS / REGEX: string-matching checks.\n" +
+      "  - TEXT: static or manually entered text.\n" +
+      "  - DATASET: read a field from the imported dataset rows.\n" +
+      "Use uppercase type values. Columns can depend on other columns via the dependencies field.",
+    inputSchema: CreateSmartTableColumnArgsSchema,
     annotations: { readOnlyHint: false },
   },
-  "rename-report": {
-    name: "rename-report",
-    description: "Rename or retag an evaluation pipeline. Provide name, tags, or both. Use this instead of recreating a misnamed pipeline.",
-    inputSchema: RenameReportArgsSchema,
+  "update-smart-table-column": {
+    name: "update-smart-table-column",
+    description: "Update a Smart Table column title, config, or dependencies. Column type and position are not changed by this tool.",
+    inputSchema: UpdateSmartTableColumnArgsSchema,
     annotations: { readOnlyHint: false },
   },
-  "add-report-column": {
-    name: "add-report-column",
-    description: "Add a single column to an existing evaluation pipeline. Use this to extend a pipeline incrementally instead of recreating the entire report. Column names must be unique within the pipeline. For column types and configuration, see https://docs.promptlayer.com/features/evaluations/column-types.",
-    inputSchema: AddReportColumnArgsSchema,
+  "list-smart-table-rows": {
+    name: "list-smart-table-rows",
+    description: "List rows in a Smart Table sheet with optional column metadata and row counts.",
+    inputSchema: ListSmartTableRowsArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "add-smart-table-rows": {
+    name: "add-smart-table-rows",
+    description: "Add up to 100 rows to a Smart Table sheet, optionally with values keyed by column UUID.",
+    inputSchema: AddSmartTableRowsArgsSchema,
     annotations: { readOnlyHint: false },
   },
-  "edit-report-column": {
-    name: "edit-report-column",
-    description: "Update an existing evaluation column's type, configuration, name, or position. Use this to fix a bug in a CODE_EXECUTION script or change a column's settings without recreating the whole pipeline. Cannot edit DATASET columns.",
-    inputSchema: EditReportColumnArgsSchema,
+  "get-smart-table-cell": {
+    name: "get-smart-table-cell",
+    description: "Get a Smart Table cell by UUID.",
+    inputSchema: GetSmartTableCellArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "update-smart-table-cell": {
+    name: "update-smart-table-cell",
+    description: "Update a Smart Table text cell. Computed cells should be recalculated instead.",
+    inputSchema: UpdateSmartTableCellArgsSchema,
     annotations: { readOnlyHint: false },
   },
-  "delete-report-column": {
-    name: "delete-report-column",
-    description: "Delete a single column from an evaluation pipeline. Cannot delete DATASET columns. Surrounding columns shift left to fill the gap.",
-    inputSchema: DeleteReportColumnArgsSchema,
+  "recalculate-smart-table-cell": {
+    name: "recalculate-smart-table-cell",
+    description: "Queue recalculation for one Smart Table computed cell.",
+    inputSchema: RecalculateSmartTableCellArgsSchema,
     annotations: { readOnlyHint: false },
+  },
+  "recalculate-smart-table-cells": {
+    name: "recalculate-smart-table-cells",
+    description: "Queue recalculation for multiple Smart Table computed cells.",
+    inputSchema: RecalculateSmartTableCellsArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "list-smart-table-operations": {
+    name: "list-smart-table-operations",
+    description: "List active Smart Table sheet operations and cell status counts.",
+    inputSchema: ListSmartTableOperationsArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "create-smart-table-operation": {
+    name: "create-smart-table-operation",
+    description:
+      "Trigger a recalculate operation on a Smart Table sheet — executes all computed columns " +
+      "(PROMPT_TEMPLATE, LLM_ASSERTION, CODE_EXECUTION, etc.) for the selected rows and columns. " +
+      "Scope the run with column_ids, row_ids, or statuses (e.g. only STALE cells). " +
+      "Returns an operation_id to poll with get-smart-table-operation.",
+    inputSchema: CreateSmartTableOperationArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "get-smart-table-operation": {
+    name: "get-smart-table-operation",
+    description: "Get status for a Smart Table sheet operation.",
+    inputSchema: GetSmartTableOperationArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "cancel-smart-table-operation": {
+    name: "cancel-smart-table-operation",
+    description: "Cancel an active Smart Table sheet operation.",
+    inputSchema: CancelSmartTableOperationArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "get-smart-table-score": {
+    name: "get-smart-table-score",
+    description:
+      "Get the configured score and current aggregate result for a Smart Table sheet. " +
+      "Useful when the sheet is being used as an evaluation — the score summarises how well the " +
+      "assertion/computation columns performed across all rows.",
+    inputSchema: GetSmartTableScoreArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "configure-smart-table-score": {
+    name: "configure-smart-table-score",
+    description:
+      "Configure scoring for a Smart Table sheet. Choose which columns contribute, set score_type " +
+      "(auto, boolean, numeric, or custom), supply custom Python/JS aggregation code, or pass a full " +
+      "score_config object.",
+    inputSchema: ConfigureSmartTableScoreArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "recalculate-smart-table-score": {
+    name: "recalculate-smart-table-score",
+    description: "Recompute the aggregate score for a Smart Table sheet.",
+    inputSchema: RecalculateSmartTableScoreArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "list-smart-table-versions": {
+    name: "list-smart-table-versions",
+    description:
+      "List saved snapshots (versions) for a Smart Table sheet. Versions capture the state of all rows " +
+      "and cells at a point in time — useful for tracking how results change across prompt updates or runs.",
+    inputSchema: ListSmartTableVersionsArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "get-smart-table-version": {
+    name: "get-smart-table-version",
+    description: "Get a saved Smart Table sheet version, including its full snapshot of cell values.",
+    inputSchema: GetSmartTableVersionArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "create-smart-table-version": {
+    name: "create-smart-table-version",
+    description:
+      "Save a named snapshot of a Smart Table sheet's current state — useful for capturing results " +
+      "before making changes so you can compare later. Pass source_version_id to restore a prior snapshot.",
+    inputSchema: CreateSmartTableVersionArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "get-smart-table-score-history": {
+    name: "get-smart-table-score-history",
+    description:
+      "Get score history across saved versions for a Smart Table sheet. Use this to track how scores " +
+      "change over time — useful for regression monitoring when the sheet is used as an evaluation.",
+    inputSchema: GetSmartTableScoreHistoryArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "list-legacy-smart-table-migrations": {
+    name: "list-legacy-smart-table-migrations",
+    description: "List successful legacy dataset/evaluation to Smart Table migration mappings.",
+    inputSchema: ListLegacySmartTableMigrationsArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "preview-legacy-smart-table-migration": {
+    name: "preview-legacy-smart-table-migration",
+    description: "Preview conversion of a legacy dataset group, dataset, or report into a Smart Table.",
+    inputSchema: PreviewLegacySmartTableMigrationArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+  "migrate-legacy-to-smart-table": {
+    name: "migrate-legacy-to-smart-table",
+    description: "Start or dry-run conversion of a legacy dataset group, dataset, or report into a Smart Table.",
+    inputSchema: MigrateLegacyToSmartTableArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "get-legacy-smart-table-migration-job": {
+    name: "get-legacy-smart-table-migration-job",
+    description: "Get status and result details for a legacy Smart Table migration job.",
+    inputSchema: GetLegacySmartTableMigrationJobArgsSchema,
+    annotations: { readOnlyHint: true },
   },
 
   // ── Agents / Workflows ──────────────────────────────────────────────
