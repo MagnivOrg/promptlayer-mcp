@@ -122,40 +122,6 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
   "get-legacy-smart-table-migration-job": (c, { job_id }) =>
     c.getLegacySmartTableMigrationJob(job_id as string),
 
-  // Datasets
-  "list-datasets": (c, a) => c.listDatasets(body(a)),
-  "create-dataset-group": (c, a) => c.createDatasetGroup(body(a)),
-  "create-dataset-version-from-file": (c, a) => c.createDatasetVersionFromFile(body(a)),
-  "create-dataset-version-from-filter-params": (c, a) => c.createDatasetVersionFromFilterParams(body(a)),
-  "get-dataset-rows": (c, { api_key: _, dataset_id, ...p }) =>
-    c.getDatasetRows(dataset_id as number, p),
-  "create-draft-dataset-version": (c, a) => c.createDraftDatasetVersion(body(a)),
-  "add-request-log-to-dataset": (c, a) => c.addRequestLogToDatasetVersion(body(a)),
-  "add-trace-to-dataset": (c, a) => c.addTraceToDatasetVersion(body(a)),
-  "save-draft-dataset-version": (c, a) => c.saveDraftDatasetVersion(body(a)),
-
-  // Evaluations
-  "list-evaluations": (c, a) => c.listEvaluations(body(a)),
-  "get-evaluation-rows": (c, { api_key: _, evaluation_id, ...p }) =>
-    c.getEvaluationRows(evaluation_id as number, p),
-  "create-report": (c, a) => c.createReport(body(a)),
-  "run-report": (c, { api_key: _, report_id, ...b }) =>
-    c.runReport(report_id as number, b),
-  "get-report": (c, { report_id }) => c.getReport(report_id as number),
-  "get-report-score": (c, { report_id }) => c.getReportScore(report_id as number),
-  "update-report-score-card": (c, { api_key: _, report_id, ...b }) =>
-    c.updateReportScoreCard(report_id as number, b),
-  "rename-report": (c, { api_key: _, report_id, ...b }) =>
-    c.renameReport(report_id as number, b),
-  "delete-report": (c, { report_id }) => c.deleteReport(report_id as number),
-  "delete-reports-by-name": (c, { report_name }) =>
-    c.deleteReportsByName(report_name as string),
-  "add-report-column": (c, a) => c.addReportColumn(body(a)),
-  "edit-report-column": (c, { api_key: _, report_column_id, ...b }) =>
-    c.editReportColumn(report_column_id as number, b),
-  "delete-report-column": (c, { report_column_id }) =>
-    c.deleteReportColumn(report_column_id as number),
-
   // Agents
   "list-workflows": (c, a) => c.listWorkflows(body(a)),
   "create-workflow": (c, a) => c.createWorkflow(body(a)),
@@ -215,9 +181,9 @@ PromptLayer is a prompt management and observability platform. This MCP server l
 - **Snippet**: A reusable prompt fragment referenced inside prompt templates with @@@snippet_name@@@ markers. Snippets are themselves prompt templates (with type "completion"). When a prompt is fetched, snippets are expanded inline by default.
 - **Release label**: A pointer (e.g. "prod", "staging") attached to a specific prompt version. Move labels between versions for deployment.
 - **Agent** (backend name: workflow): A multi-step pipeline of nodes. Each node has a type, configuration, and dependencies. Agents are versioned like prompts.
-- **Smart Table**: The primary workspace for test data, evaluation columns, request-log imports, execution, scoring, and version history.
-- **Smart Table sheet**: A tab inside a Smart Table. Sheets contain rows, columns, cells, operations, score configuration, and saved versions.
-- **Legacy dataset/evaluation**: Older dataset and report resources. Tools for these remain available for compatibility, but prefer Smart Tables for new work.
+- **Smart Table**: PromptLayer's general-purpose data and computation layer. A table can hold any tabular data and run computed columns over rows. Common uses include evaluations, regression testing, prompt comparisons, and dataset curation.
+- **Smart Table sheet**: A tab inside a Smart Table. Sheets contain rows, columns, cells, operations, score configuration, and saved version snapshots.
+- **Legacy dataset/evaluation**: Older dataset and report resources. Tools remain available for compatibility; prefer Smart Tables for new work.
 - **Folder**: Organizes prompts, agents, Smart Tables, and other entities into a hierarchy.
 
 ## Working with prompts and snippets
@@ -230,9 +196,11 @@ Use get-prompt-template (the POST variant) only when you need a fully rendered p
 
 ## Working with Smart Tables
 
-For new dataset or evaluation-style workflows, use Smart Tables instead of legacy datasets and reports. A typical flow is: create-smart-table, add or import sheets, create columns, add rows or import request logs, run recalculation operations, configure sheet scoring, and save versions.
+Smart Tables are general-purpose — use them for any tabular data and computation: evaluations, regression testing, prompt comparisons, dataset curation, or anything else. A typical flow is: create-smart-table → add a sheet (from a file or by importing historical request logs) → create columns → add rows or import more request logs → run a recalculate operation → optionally configure scoring and save a version snapshot.
 
-Use uppercase Smart Table column type values such as TEXT, PROMPT_TEMPLATE, LLM_ASSERTION, CODE_EXECUTION, and COMPOSITION. Direct cell edits are for text cells; computed cells should be recalculated with cell or sheet operation tools.
+To add historical request logs to a table, use import-smart-table-sheet-request-logs (on an existing sheet) or create-smart-table-sheet with source type "request_logs".
+
+Use uppercase column type values such as TEXT, PROMPT_TEMPLATE, LLM_ASSERTION, CODE_EXECUTION, and COMPARE. Direct cell edits are for text cells; computed cells should be recalculated via cell or sheet operation tools.
 
 Use the legacy migration tools to preview or convert existing dataset groups, datasets, and reports into Smart Tables.
 

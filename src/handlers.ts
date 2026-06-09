@@ -194,59 +194,6 @@ export function registerAllTools(server: any) {
     (c, a) => c.getLegacySmartTableMigrationJob(a.job_id as string),
     (r) => `Migration job ${(r as { status?: string }).status ?? "retrieved"}`);
 
-  // Datasets
-  reg(t["list-datasets"], (c, a) => c.listDatasets(body(a)),
-    (r) => { const { datasets, total } = r as { datasets?: unknown[]; total?: number }; return `${datasets?.length ?? 0} dataset(s) (total: ${total ?? "?"})`; });
-  reg(t["create-dataset-group"], (c, a) => c.createDatasetGroup(body(a)), () => "Dataset group created");
-  reg(t["create-dataset-version-from-file"], (c, a) => c.createDatasetVersionFromFile(body(a)), () => "Dataset version from file initiated");
-  reg(t["create-dataset-version-from-filter-params"], (c, a) => c.createDatasetVersionFromFilterParams(body(a)), () => "Dataset version from history initiated");
-  reg(t["get-dataset-rows"],
-    (c, a) => { const { api_key: _, dataset_id, ...p } = a as { dataset_id: number; api_key?: string } & Args; return c.getDatasetRows(dataset_id, p); },
-    (r) => { const { rows, total, page, pages } = r as { rows?: unknown[]; total?: number; page?: number; pages?: number }; return `${rows?.length ?? 0} row(s) (page ${page ?? 1}/${pages ?? 1}, total ${total ?? "?"})`; });
-  reg(t["create-draft-dataset-version"], (c, a) => c.createDraftDatasetVersion(body(a)), () => "Draft dataset version created");
-  reg(t["add-request-log-to-dataset"], (c, a) => c.addRequestLogToDatasetVersion(body(a)), () => "Request log added to draft dataset");
-  reg(t["add-trace-to-dataset"], (c, a) => c.addTraceToDatasetVersion(body(a)),
-    (r) => { const m = (r as { mode?: string }).mode; return m ? `Trace added to draft dataset (mode: ${m})` : "Trace added to draft dataset"; });
-  reg(t["save-draft-dataset-version"], (c, a) => c.saveDraftDatasetVersion(body(a)), () => "Draft dataset save initiated");
-
-  // Evaluations
-  reg(t["list-evaluations"], (c, a) => c.listEvaluations(body(a)),
-    (r) => { const { items, total } = r as { items?: unknown[]; total?: number }; return `${items?.length ?? 0} evaluation(s) (total: ${total ?? "?"})`; });
-  reg(t["get-evaluation-rows"],
-    (c, a) => { const { api_key: _, evaluation_id, ...p } = a as { evaluation_id: number; api_key?: string } & Args; return c.getEvaluationRows(evaluation_id, p); },
-    (r) => { const { rows, total, page, pages } = r as { rows?: unknown[]; total?: number; page?: number; pages?: number }; return `${rows?.length ?? 0} row(s) (page ${page ?? 1}/${pages ?? 1}, total ${total ?? "?"})`; });
-  reg(t["create-report"], (c, a) => c.createReport(body(a)),
-    (r) => { const id = (r as { report_id?: number }).report_id; return id ? `Pipeline created (ID: ${id})` : "Pipeline created"; });
-  reg(t["run-report"],
-    (c, a) => { const { api_key: _, report_id, ...b } = a as { report_id: number; api_key?: string } & Args; return c.runReport(report_id, b); },
-    () => "Evaluation run started");
-  reg(t["get-report"],
-    (c, a) => c.getReport((a as { report_id: number }).report_id),
-    () => "Evaluation retrieved");
-  reg(t["get-report-score"],
-    (c, a) => c.getReportScore((a as { report_id: number }).report_id),
-    (r) => { const s = (r as { score?: number }).score; return s !== undefined ? `Score: ${s}` : "Score retrieved"; });
-  reg(t["update-report-score-card"],
-    (c, a) => { const { api_key: _, report_id, ...b } = a as { report_id: number; api_key?: string } & Args; return c.updateReportScoreCard(report_id, b); },
-    () => "Score card updated");
-  reg(t["delete-reports-by-name"],
-    (c, a) => c.deleteReportsByName((a as { report_name: string }).report_name),
-    () => "Reports archived");
-  reg(t["delete-report"],
-    (c, a) => c.deleteReport((a as { report_id: number }).report_id),
-    () => "Evaluation pipeline archived");
-  reg(t["rename-report"],
-    (c, a) => { const { api_key: _, report_id, ...b } = a as { report_id: number; api_key?: string } & Args; return c.renameReport(report_id, b); },
-    () => "Evaluation pipeline updated");
-  reg(t["add-report-column"], (c, a) => c.addReportColumn(body(a)),
-    (r) => { const id = (r as { report_column?: { id?: number } }).report_column?.id; return id ? `Column added (ID: ${id})` : "Column added"; });
-  reg(t["edit-report-column"],
-    (c, a) => { const { api_key: _, report_column_id, ...b } = a as { report_column_id: number; api_key?: string } & Args; return c.editReportColumn(report_column_id, b); },
-    () => "Column updated");
-  reg(t["delete-report-column"],
-    (c, a) => c.deleteReportColumn((a as { report_column_id: number }).report_column_id),
-    () => "Column deleted");
-
   // Agents
   reg(t["list-workflows"], (c, a) => c.listWorkflows(body(a)), () => "Agents listed");
   reg(t["create-workflow"], (c, a) => c.createWorkflow(body(a)), () => "Agent created");

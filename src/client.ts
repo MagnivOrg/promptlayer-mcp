@@ -106,32 +106,6 @@ export class PromptLayerClient {
   migrateLegacyToSmartTable(body: Body) { return this.post("/api/public/v2/tables/legacy-migrations", body); }
   getLegacySmartTableMigrationJob(jobId: string) { return this.get(`/api/public/v2/tables/legacy-migrations/jobs/${this.enc(jobId)}`); }
 
-  // Datasets
-  listDatasets(params?: Body) { return this.get("/api/public/v2/datasets", params); }
-  getDatasetRows(id: number, params?: Body) { return this.get(`/api/public/v2/datasets/${id}/rows`, params); }
-  createDatasetGroup(body: Body) { return this.post("/api/public/v2/dataset-groups", body); }
-  createDatasetVersionFromFile(body: Body) { return this.post("/api/public/v2/dataset-versions/from-file", body); }
-  createDatasetVersionFromFilterParams(body: Body) { return this.post("/api/public/v2/dataset-versions/from-filter-params", body); }
-  createDraftDatasetVersion(body: Body) { return this.post("/api/public/v2/dataset-versions/create-draft", body); }
-  addRequestLogToDatasetVersion(body: Body) { return this.post("/api/public/v2/dataset-versions/add-request-log", body); }
-  addTraceToDatasetVersion(body: Body) { return this.post("/api/public/v2/dataset-versions/add-trace", body); }
-  saveDraftDatasetVersion(body: Body) { return this.post("/api/public/v2/dataset-versions/save-draft", body); }
-
-  // Evaluations
-  listEvaluations(params?: Body) { return this.get("/api/public/v2/evaluations", params); }
-  getEvaluationRows(id: number, params?: Body) { return this.get(`/api/public/v2/evaluations/${id}/rows`, params); }
-  createReport(body: Body) { return this.post("/reports", body); }
-  runReport(id: number, body: Body) { return this.post(`/reports/${id}/run`, body); }
-  getReport(id: number) { return this.get(`/reports/${id}`); }
-  getReportScore(id: number) { return this.get(`/reports/${id}/score`); }
-  updateReportScoreCard(id: number, body: Body) { return this.patch(`/reports/${id}/score-card`, body); }
-  renameReport(id: number, body: Body) { return this.patch(`/reports/${id}/rename`, body); }
-  deleteReport(id: number) { return this.del(`/reports/${id}`); }
-  deleteReportsByName(name: string) { return this.del(`/reports/name/${this.enc(name)}`); }
-  addReportColumn(body: Body) { return this.post("/report-columns", body); }
-  editReportColumn(id: number, body: Body) { return this.patch(`/report-columns/${id}`, body); }
-  deleteReportColumn(id: number) { return this.del(`/report-columns/${id}`); }
-
   // Agents
   listWorkflows(params?: Body) { return this.get("/workflows", params); }
   getWorkflow(idOrName: string, params?: Body) { return this.get(`/workflows/${this.enc(idOrName)}`, params); }
