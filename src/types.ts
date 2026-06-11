@@ -617,7 +617,7 @@ const CustomChartSpecSchema = z.object({
   limit: z.number().int().min(1).max(100).optional().describe("Max group-by buckets to return (default 25)"),
 });
 
-export const GetRequestAnalyticsCustomChartsArgsSchema = z.object({
+export const GetRequestAnalyticsCustomAnalyticsArgsSchema = z.object({
   ...RequestLogQueryShape,
   customCharts: z.array(CustomChartSpecSchema).min(1)
     .describe("One or more chart definitions to compute. Chart ids must be unique within the request"),
@@ -1630,7 +1630,7 @@ export const TOOL_DEFINITIONS = {
       "  - `series`: multi-series mode — define two or more named series instead of a single metric\n\n" +
       "Use this when get-request-analytics doesn't cover the slice you need. " +
       "Examples: cost by metadata environment, p95 latency over time by prompt, input vs output token ratio.",
-    inputSchema: GetRequestAnalyticsCustomChartsArgsSchema,
+    inputSchema: GetRequestAnalyticsCustomAnalyticsArgsSchema,
     annotations: { readOnlyHint: true },
   },
 

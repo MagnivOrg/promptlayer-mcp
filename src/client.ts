@@ -145,7 +145,7 @@ export class PromptLayerClient {
 
   // Analytics
   getRequestAnalytics(body: Body) { return this.post("/api/public/v2/requests/analytics", body); }
-  getRequestAnalyticsCustomCharts(body: Body) { return this.post("/api/public/v2/requests/analytics/custom-analytics", body); }
+  getRequestAnalyticsCustomAnalytics(body: Body) { return this.post("/api/public/v2/requests/analytics/custom-analytics", body); }
 
   // Prompt template patch
   patchPromptTemplateVersion(identifier: string, body: Body) { return this.patch(`/rest/prompt-templates/${this.enc(identifier)}`, body); }
