@@ -620,7 +620,7 @@ const CustomChartSpecSchema = z.object({
 export const GetRequestAnalyticsCustomAnalyticsArgsSchema = z.object({
   ...RequestLogQueryShape,
   customCharts: z.array(CustomChartSpecSchema).min(1)
-    .describe("One or more chart definitions to compute. Chart ids must be unique within the request"),
+    .describe("One or more analytics queries to compute. IDs must be unique within the request"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -1620,8 +1620,8 @@ export const TOOL_DEFINITIONS = {
   "get-request-analytics-custom-analytics": {
     name: "get-request-analytics-custom-analytics",
     description:
-      "Build custom analytics charts from request logs. You define which metrics to compute and how to slice them; the API runs the aggregations and returns ready-to-render data rows.\n\n" +
-      "Each chart spec in `customCharts` controls:\n" +
+      "Run custom analytics queries over request logs. You define which metrics to compute and how to slice them; the API runs the aggregations and returns structured data rows you can use however you want — charts, analysis, dashboards, or programmatic processing.\n\n" +
+      "Each query spec in `customCharts` controls:\n" +
       "  - `metric`: count | sum | avg | min | max | percentile (with optional `percentile` 0–100)\n" +
       "  - `metricField`: the numeric field to aggregate (input_tokens, output_tokens, cost, latency_ms, turn_count, tool_call_count, cached_tokens, thinking_tokens)\n" +
       "  - `groupByField`: break down by engine, provider_type, prompt_id, status, error_type, tags, etc.\n" +
