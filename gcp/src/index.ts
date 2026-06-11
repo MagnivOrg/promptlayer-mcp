@@ -47,7 +47,7 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
   "get-trace": (c, { trace_id }) => c.getTrace(trace_id as string),
   "get-request-search-suggestions": (c, a) => c.getRequestSearchSuggestions(body(a)),
   "get-request-analytics": (c, a) => c.getRequestAnalytics(body(a)),
-  "get-request-analytics-custom-charts": (c, a) => c.getRequestAnalyticsCustomCharts(body(a)),
+  "get-request-analytics-custom-analytics": (c, a) => c.getRequestAnalyticsCustomCharts(body(a)),
 
   // Tracking
   "log-request": (c, a) => c.logRequest(body(a)),

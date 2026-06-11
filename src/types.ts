@@ -570,7 +570,7 @@ export const GetRequestAnalyticsArgsSchema = z.object({
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
-// ── Get Request Analytics Custom Charts (POST /api/public/v2/requests/analytics/custom-charts) ──
+// ── Get Request Analytics Custom Analytics (POST /api/public/v2/requests/analytics/custom-analytics) ──
 
 const METRIC_FIELD_VALUES = [
   "input_tokens", "output_tokens", "cost", "latency_ms", "prompt_version_number",
@@ -1617,8 +1617,8 @@ export const TOOL_DEFINITIONS = {
     annotations: { readOnlyHint: true },
   },
 
-  "get-request-analytics-custom-charts": {
-    name: "get-request-analytics-custom-charts",
+  "get-request-analytics-custom-analytics": {
+    name: "get-request-analytics-custom-analytics",
     description:
       "Build custom analytics charts from request logs. You define which metrics to compute and how to slice them; the API runs the aggregations and returns ready-to-render data rows.\n\n" +
       "Each chart spec in `customCharts` controls:\n" +
