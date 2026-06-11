@@ -570,6 +570,60 @@ export const GetRequestAnalyticsArgsSchema = z.object({
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
+// ── Get Request Analytics Custom Charts (POST /api/public/v2/requests/analytics/custom-charts) ──
+
+const METRIC_FIELD_VALUES = [
+  "input_tokens", "output_tokens", "cost", "latency_ms", "prompt_version_number",
+  "turn_count", "tool_call_count", "cached_tokens", "thinking_tokens",
+] as const;
+
+const GROUP_BY_FIELD_VALUES = [
+  "engine", "provider_type", "prompt_id", "prompt_version_number", "status",
+  "error_type", "tags", "metadata_keys", "output_keys", "input_variable_keys", "tool_names",
+] as const;
+
+const CustomChartSeriesSpecSchema = z.object({
+  key: z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/).describe("Unique series key within the chart"),
+  label: z.string().min(1).max(120).describe("Human-readable series label"),
+  metric: z.enum(["sum", "avg", "min", "max", "percentile"]).describe("Aggregation function"),
+  metricField: z.enum(METRIC_FIELD_VALUES).describe("Numeric field to aggregate"),
+  percentile: z.number().min(0).max(100).optional().describe("Required when metric is percentile (0–100)"),
+});
+
+const DerivedRatioInsightSchema = z.object({
+  label: z.string().min(1).max(200).describe("Display label for this insight"),
+  numeratorSeriesKey: z.string().describe("Key of the numerator series"),
+  denominatorSeriesKey: z.string().describe("Key of the denominator series"),
+});
+
+const CustomChartSpecSchema = z.object({
+  id: z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/).describe("Stable chart id (unique within the request)"),
+  title: z.string().max(200).optional().describe("Optional display title; defaults to id"),
+  chartType: z.enum(["bar", "line", "area"]).describe("Chart type. Overall aggregates (no timeSeries, no groupBy) must use bar"),
+  metric: z.enum(["count", "sum", "avg", "min", "max", "percentile"]).optional()
+    .describe("Aggregation function. Omit when using series (multi-series mode)"),
+  metricField: z.enum(METRIC_FIELD_VALUES).optional()
+    .describe("Numeric field to aggregate. Required unless metric is count or using series"),
+  percentile: z.number().min(0).max(100).optional().describe("Required when metric is percentile"),
+  series: z.array(CustomChartSeriesSpecSchema).min(2).optional()
+    .describe("Multi-series mode: two or more series specs. Omit metric/metricField when using this"),
+  derivedInsights: z.array(DerivedRatioInsightSchema).optional()
+    .describe("Ratio insights computed from series totals. Multi-series only"),
+  groupByField: z.enum(GROUP_BY_FIELD_VALUES).optional()
+    .describe("Break down by this request log field. Cannot be combined with groupByMetadataKey"),
+  groupByMetadataKey: z.string().min(1).max(120).optional()
+    .describe("Break down by values of this metadata key. Cannot be combined with groupByField"),
+  timeSeries: z.boolean().optional().describe("Bucket results over time when true"),
+  limit: z.number().int().min(1).max(100).optional().describe("Max group-by buckets to return (default 25)"),
+});
+
+export const GetRequestAnalyticsCustomChartsArgsSchema = z.object({
+  ...RequestLogQueryShape,
+  customCharts: z.array(CustomChartSpecSchema).min(1)
+    .describe("One or more chart definitions to compute. Chart ids must be unique within the request"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
 // ── Get Request (GET /api/public/v2/requests/{request_id}) ───────────────
 
 export const GetRequestArgsSchema = z.object({
@@ -1560,6 +1614,23 @@ export const TOOL_DEFINITIONS = {
       "and most-used models/prompts. Body is the same shape as search-request-logs (filter_group, q, sort_by, sort_order); the response is aggregated, not paginated rows. " +
       "Use this to answer questions like 'how much have we spent on GPT-4o this week?' or 'what's the p90 latency for prod traffic?'.",
     inputSchema: GetRequestAnalyticsArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+
+  "get-request-analytics-custom-charts": {
+    name: "get-request-analytics-custom-charts",
+    description:
+      "Build custom analytics charts from request logs. You define which metrics to compute and how to slice them; the API runs the aggregations and returns ready-to-render data rows.\n\n" +
+      "Each chart spec in `customCharts` controls:\n" +
+      "  - `metric`: count | sum | avg | min | max | percentile (with optional `percentile` 0–100)\n" +
+      "  - `metricField`: the numeric field to aggregate (input_tokens, output_tokens, cost, latency_ms, turn_count, tool_call_count, cached_tokens, thinking_tokens)\n" +
+      "  - `groupByField`: break down by engine, provider_type, prompt_id, status, error_type, tags, etc.\n" +
+      "  - `groupByMetadataKey`: break down by values of a specific metadata key\n" +
+      "  - `timeSeries: true`: bucket results over time\n" +
+      "  - `series`: multi-series mode — define two or more named series instead of a single metric\n\n" +
+      "Use this when get-request-analytics doesn't cover the slice you need. " +
+      "Examples: cost by metadata environment, p95 latency over time by prompt, input vs output token ratio.",
+    inputSchema: GetRequestAnalyticsCustomChartsArgsSchema,
     annotations: { readOnlyHint: true },
   },
 

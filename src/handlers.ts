@@ -284,6 +284,9 @@ export function registerAllTools(server: any) {
   reg(t["get-request-analytics"], (c, a) => c.getRequestAnalytics(body(a)),
     (r) => { const x = r as { totalRequests?: number; totalCost?: number }; const reqs = x.totalRequests ?? 0; const cost = x.totalCost; return cost !== undefined ? `${reqs} request(s), $${cost} total cost` : `${reqs} request(s) analyzed`; });
 
+  reg(t["get-request-analytics-custom-charts"], (c, a) => c.getRequestAnalyticsCustomCharts(body(a)),
+    (r) => { const charts = (r as { customCharts?: unknown[] }).customCharts ?? []; return `${charts.length} custom chart(s) computed`; });
+
   // Prompt template patch
   reg(t["patch-prompt-template-version"],
     (c, a) => { const { api_key: _, identifier, ...b } = a as { identifier: string; api_key?: string } & Args; return c.patchPromptTemplateVersion(identifier, b); },
