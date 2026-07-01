@@ -60,6 +60,8 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
     c.getSmartTable(table_id as string),
   "update-smart-table": (c, a) =>
     c.updateSmartTable(a.table_id as string, omit(a, "table_id")),
+  "delete-smart-table": (c, { table_id }) =>
+    c.deleteSmartTable(table_id as string),
   "list-smart-table-sheets": (c, a) =>
     c.listSmartTableSheets(a.table_id as string, omit(a, "table_id")),
   "create-smart-table-sheet": (c, a) =>
@@ -68,6 +70,8 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
     c.getSmartTableSheet(table_id as string, sheet_id as string),
   "update-smart-table-sheet": (c, a) =>
     c.updateSmartTableSheet(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+  "delete-smart-table-sheet": (c, { table_id, sheet_id }) =>
+    c.deleteSmartTableSheet(table_id as string, sheet_id as string),
   "get-smart-table-sheet-import-operation": (c, { table_id, operation_id }) =>
     c.getSmartTableSheetImportOperation(table_id as string, operation_id as string),
   "import-smart-table-sheet-file": (c, a) =>
@@ -80,6 +84,8 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
     c.createSmartTableColumn(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
   "update-smart-table-column": (c, a) =>
     c.updateSmartTableColumn(a.table_id as string, a.sheet_id as string, a.column_id as string, omit(a, "table_id", "sheet_id", "column_id")),
+  "delete-smart-table-column": (c, { table_id, sheet_id, column_id }) =>
+    c.deleteSmartTableColumn(table_id as string, sheet_id as string, column_id as string),
   "list-smart-table-rows": (c, a) =>
     c.listSmartTableRows(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
   "add-smart-table-rows": (c, a) =>
