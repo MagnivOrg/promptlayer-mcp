@@ -70,16 +70,19 @@ export class PromptLayerClient {
   createSmartTable(body: Body) { return this.post("/api/public/v2/tables", body); }
   getSmartTable(tableId: string) { return this.get(`/api/public/v2/tables/${this.enc(tableId)}`); }
   updateSmartTable(tableId: string, body: Body) { return this.patch(`/api/public/v2/tables/${this.enc(tableId)}`, body); }
+  deleteSmartTable(tableId: string) { return this.del(`/api/public/v2/tables/${this.enc(tableId)}`); }
   listSmartTableSheets(tableId: string, params?: Body) { return this.get(`/api/public/v2/tables/${this.enc(tableId)}/sheets`, params); }
   createSmartTableSheet(tableId: string, body: Body) { return this.post(`/api/public/v2/tables/${this.enc(tableId)}/sheets`, body); }
   getSmartTableSheet(tableId: string, sheetId: string) { return this.get(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}`); }
   updateSmartTableSheet(tableId: string, sheetId: string, body: Body) { return this.patch(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}`, body); }
+  deleteSmartTableSheet(tableId: string, sheetId: string) { return this.del(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}`); }
   getSmartTableSheetImportOperation(tableId: string, operationId: string) { return this.get(`/api/public/v2/tables/${this.enc(tableId)}/sheets/operations/${this.enc(operationId)}`); }
   importSmartTableSheetFile(tableId: string, sheetId: string, body: Body) { return this.post(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/imports/file`, body); }
   importSmartTableSheetRequestLogs(tableId: string, sheetId: string, body: Body) { return this.post(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/imports/request-logs`, body); }
   listSmartTableColumns(tableId: string, sheetId: string, params?: Body) { return this.get(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/columns`, params); }
   createSmartTableColumn(tableId: string, sheetId: string, body: Body) { return this.post(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/columns`, body); }
   updateSmartTableColumn(tableId: string, sheetId: string, columnId: string, body: Body) { return this.patch(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/columns/${this.enc(columnId)}`, body); }
+  deleteSmartTableColumn(tableId: string, sheetId: string, columnId: string) { return this.del(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/columns/${this.enc(columnId)}`); }
   listSmartTableRows(tableId: string, sheetId: string, params?: Body) { return this.get(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/rows`, params); }
   addSmartTableRows(tableId: string, sheetId: string, body: Body) { return this.post(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/rows`, body); }
   getSmartTableCell(tableId: string, sheetId: string, cellId: string) { return this.get(`/api/public/v2/tables/${this.enc(tableId)}/sheets/${this.enc(sheetId)}/cells/${this.enc(cellId)}`); }
