@@ -1,6 +1,7 @@
 import express from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { SMART_TABLE_COLUMN_TYPE_SERVER_INSTRUCTIONS } from "../../src/columnTypes.js";
 import { TOOL_DEFINITIONS } from "../../src/types.js";
 import { PromptLayerClient } from "../../src/client.js";
 
@@ -209,7 +210,7 @@ Smart Tables are general-purpose — use them for any tabular data and computati
 
 To add historical request logs to a table, use import-smart-table-sheet-request-logs (on an existing sheet) or create-smart-table-sheet with source type "request_logs".
 
-Use uppercase column type values such as TEXT, PROMPT_TEMPLATE, LLM_ASSERTION, CODE_EXECUTION, and COMPARE. Direct cell edits are for text cells; computed cells should be recalculated via cell or sheet operation tools.
+${SMART_TABLE_COLUMN_TYPE_SERVER_INSTRUCTIONS}
 
 Use the legacy migration tools to preview or convert existing dataset groups, datasets, and reports into Smart Tables.
 
