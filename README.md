@@ -147,7 +147,7 @@ Smart Tables are the recommended replacement for legacy datasets and evaluations
 | Tool | Description |
 |---|---|
 | `list-smart-tables` | List Smart Tables with cursor pagination and filters. |
-| `create-smart-table` | Create a Smart Table with a default sheet and text column. |
+| `create-smart-table` | Create a Smart Table with a default sheet and text column. Response includes `default_sheet: { id, title }` — use `default_sheet.id` for columns, rows, and imports. |
 | `get-smart-table` | Get a Smart Table by UUID. |
 | `update-smart-table` | Update a Smart Table title or folder. |
 | `list-smart-table-sheets` | List sheets in a Smart Table. |

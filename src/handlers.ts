@@ -79,8 +79,17 @@ export function registerAllTools(server: any) {
     (r) => `${(r as { data?: unknown[] }).data?.length ?? 0} table(s)`);
   reg(t["create-smart-table"], (c, a) => c.createSmartTable(body(a)),
     (r) => {
-      const table = (r as { table?: { id?: string; title?: string } }).table;
-      return table?.id ? `Table "${table.title ?? ""}" created (${table.id})` : "Table created";
+      const response = r as {
+        table?: { id?: string; title?: string };
+        default_sheet?: { id?: string; title?: string };
+      };
+      const table = response.table;
+      if (!table?.id) return "Table created";
+      const defaultSheet = response.default_sheet;
+      if (defaultSheet?.id) {
+        return `Table "${table.title ?? ""}" created (${table.id}). Default sheet "${defaultSheet.title ?? "Sheet 1"}" (${defaultSheet.id})`;
+      }
+      return `Table "${table.title ?? ""}" created (${table.id})`;
     });
   reg(t["get-smart-table"],
     (c, a) => c.getSmartTable(a.table_id as string),
