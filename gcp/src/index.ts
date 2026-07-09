@@ -1,9 +1,11 @@
 import express from "express";
+import pkg from "../../package.json";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { SMART_TABLE_COLUMN_TYPE_SERVER_INSTRUCTIONS } from "../../src/columnTypes.js";
 import { TOOL_DEFINITIONS } from "../../src/types.js";
 import { PromptLayerClient } from "../../src/client.js";
+import { getBaseUrl } from "../../src/utils.js";
 
 // ── Tool handler mapping ────────────────────────────────────────────────────
 
@@ -61,6 +63,8 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
     c.getSmartTable(table_id as string),
   "update-smart-table": (c, a) =>
     c.updateSmartTable(a.table_id as string, omit(a, "table_id")),
+  "delete-smart-table": (c, { table_id }) =>
+    c.deleteSmartTable(table_id as string),
   "list-smart-table-sheets": (c, a) =>
     c.listSmartTableSheets(a.table_id as string, omit(a, "table_id")),
   "create-smart-table-sheet": (c, a) =>
@@ -69,6 +73,8 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
     c.getSmartTableSheet(table_id as string, sheet_id as string),
   "update-smart-table-sheet": (c, a) =>
     c.updateSmartTableSheet(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
+  "delete-smart-table-sheet": (c, { table_id, sheet_id }) =>
+    c.deleteSmartTableSheet(table_id as string, sheet_id as string),
   "get-smart-table-sheet-import-operation": (c, { table_id, operation_id }) =>
     c.getSmartTableSheetImportOperation(table_id as string, operation_id as string),
   "import-smart-table-sheet-file": (c, a) =>
@@ -81,6 +87,8 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
     c.createSmartTableColumn(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
   "update-smart-table-column": (c, a) =>
     c.updateSmartTableColumn(a.table_id as string, a.sheet_id as string, a.column_id as string, omit(a, "table_id", "sheet_id", "column_id")),
+  "delete-smart-table-column": (c, { table_id, sheet_id, column_id }) =>
+    c.deleteSmartTableColumn(table_id as string, sheet_id as string, column_id as string),
   "list-smart-table-rows": (c, a) =>
     c.listSmartTableRows(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
   "add-smart-table-rows": (c, a) =>
@@ -235,7 +243,7 @@ function resolveApiKey(argKey?: string, headerKey?: string): string {
 
 function createMcpServer(defaultApiKey?: string): McpServer {
   const server = new McpServer(
-    { name: "promptlayer-server", version: "1.0.0" },
+    { name: "promptlayer-server", version: pkg.version },
     { instructions: INSTRUCTIONS },
   );
 
@@ -246,7 +254,7 @@ function createMcpServer(defaultApiKey?: string): McpServer {
     server.tool(name, def.description, def.inputSchema.shape, async (args: Args) => {
       try {
         const apiKey = resolveApiKey(args.api_key as string | undefined, defaultApiKey);
-        const client = new PromptLayerClient(apiKey);
+        const client = new PromptLayerClient(apiKey, getBaseUrl());
         const result = await handler(client, args);
         return {
           content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],

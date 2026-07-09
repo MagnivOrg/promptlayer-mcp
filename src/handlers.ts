@@ -79,8 +79,17 @@ export function registerAllTools(server: any) {
     (r) => `${(r as { data?: unknown[] }).data?.length ?? 0} table(s)`);
   reg(t["create-smart-table"], (c, a) => c.createSmartTable(body(a)),
     (r) => {
-      const table = (r as { table?: { id?: string; title?: string } }).table;
-      return table?.id ? `Table "${table.title ?? ""}" created (${table.id})` : "Table created";
+      const response = r as {
+        table?: { id?: string; title?: string };
+        default_sheet?: { id?: string; title?: string };
+      };
+      const table = response.table;
+      if (!table?.id) return "Table created";
+      const defaultSheet = response.default_sheet;
+      if (defaultSheet?.id) {
+        return `Table "${table.title ?? ""}" created (${table.id}). Default sheet "${defaultSheet.title ?? "Sheet 1"}" (${defaultSheet.id})`;
+      }
+      return `Table "${table.title ?? ""}" created (${table.id})`;
     });
   reg(t["get-smart-table"],
     (c, a) => c.getSmartTable(a.table_id as string),
@@ -88,6 +97,9 @@ export function registerAllTools(server: any) {
   reg(t["update-smart-table"],
     (c, a) => c.updateSmartTable(a.table_id as string, omit(a, "table_id")),
     () => "Table updated");
+  reg(t["delete-smart-table"],
+    (c, a) => c.deleteSmartTable(a.table_id as string),
+    () => "Table deleted");
   reg(t["list-smart-table-sheets"],
     (c, a) => c.listSmartTableSheets(a.table_id as string, omit(a, "table_id")),
     (r) => `${(r as { data?: unknown[] }).data?.length ?? 0} sheet(s)`);
@@ -103,6 +115,9 @@ export function registerAllTools(server: any) {
   reg(t["update-smart-table-sheet"],
     (c, a) => c.updateSmartTableSheet(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
     () => "Sheet updated");
+  reg(t["delete-smart-table-sheet"],
+    (c, a) => c.deleteSmartTableSheet(a.table_id as string, a.sheet_id as string),
+    () => "Sheet deleted");
   reg(t["get-smart-table-sheet-import-operation"],
     (c, a) => c.getSmartTableSheetImportOperation(a.table_id as string, a.operation_id as string),
     (r) => `Import operation ${(r as { operation?: { status?: string } }).operation?.status ?? "retrieved"}`);
@@ -121,6 +136,9 @@ export function registerAllTools(server: any) {
   reg(t["update-smart-table-column"],
     (c, a) => c.updateSmartTableColumn(a.table_id as string, a.sheet_id as string, a.column_id as string, omit(a, "table_id", "sheet_id", "column_id")),
     (r) => (r as { requires_recalculation?: boolean }).requires_recalculation ? "Column updated; recalculation required" : "Column updated");
+  reg(t["delete-smart-table-column"],
+    (c, a) => c.deleteSmartTableColumn(a.table_id as string, a.sheet_id as string, a.column_id as string),
+    () => "Column deleted");
   reg(t["list-smart-table-rows"],
     (c, a) => c.listSmartTableRows(a.table_id as string, a.sheet_id as string, omit(a, "table_id", "sheet_id")),
     (r) => `${(r as { data?: unknown[] }).data?.length ?? 0} row(s)`);

@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 
+import { createRequire } from "node:module";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { SMART_TABLE_COLUMN_TYPE_SERVER_INSTRUCTIONS } from "./columnTypes.js";
 import { registerAllTools } from "./handlers.js";
+
+const { version } = createRequire(import.meta.url)("../package.json");
 
 const INSTRUCTIONS = `
 PromptLayer is a prompt management and observability platform. This MCP server lets you manage PromptLayer resources.
@@ -41,7 +44,7 @@ For deeper questions about PromptLayer features, configuration, or API details, 
 `.trim();
 
 const server = new McpServer(
-  { name: "promptlayer-server", version: "1.0.0" },
+  { name: "promptlayer-server", version },
   { instructions: INSTRUCTIONS },
 );
 registerAllTools(server);
