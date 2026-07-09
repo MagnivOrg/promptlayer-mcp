@@ -1,4 +1,5 @@
 import express from "express";
+import pkg from "../../package.json";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { TOOL_DEFINITIONS } from "../../src/types.js";
@@ -241,7 +242,7 @@ function resolveApiKey(argKey?: string, headerKey?: string): string {
 
 function createMcpServer(defaultApiKey?: string): McpServer {
   const server = new McpServer(
-    { name: "promptlayer-server", version: "1.0.0" },
+    { name: "promptlayer-server", version: pkg.version },
     { instructions: INSTRUCTIONS },
   );
 
