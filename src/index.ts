@@ -3,6 +3,7 @@
 import { createRequire } from "node:module";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { SMART_TABLE_COLUMN_TYPE_SERVER_INSTRUCTIONS } from "./columnTypes.js";
 import { registerAllTools } from "./handlers.js";
 
 const { version } = createRequire(import.meta.url)("../package.json");
@@ -33,7 +34,7 @@ Use get-prompt-template (the POST variant) only when you need a fully rendered p
 
 For new dataset or evaluation-style workflows, use Smart Tables instead of legacy datasets and reports. A typical flow is: create-smart-table, add or import sheets, create columns, add rows or import request logs, run recalculation operations, configure sheet scoring, and save versions.
 
-Use uppercase Smart Table column type values such as TEXT, PROMPT_TEMPLATE, LLM_ASSERTION, CODE_EXECUTION, and COMPOSITION. Direct cell edits are for text cells; computed cells should be recalculated with cell or sheet operation tools.
+${SMART_TABLE_COLUMN_TYPE_SERVER_INSTRUCTIONS}
 
 Use the legacy migration tools to preview or convert existing dataset groups, datasets, and reports into Smart Tables.
 

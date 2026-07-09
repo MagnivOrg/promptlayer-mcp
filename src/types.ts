@@ -5,6 +5,12 @@
  */
 
 import { z } from "zod";
+import {
+  SMART_TABLE_CREATABLE_COLUMN_TYPES,
+  buildCreateSmartTableColumnToolDescription,
+  normalizeSmartTableColumnType,
+  smartTableColumnTypeFieldDescription,
+} from "./columnTypes.js";
 
 
 // ── Get Prompt Template (POST /prompt-templates/{identifier}) ────────────
@@ -666,40 +672,15 @@ const SmartTablePromptFilterShape = {
   prompt_version_id: z.number().int().positive().optional().describe("Filter to tables/sheets that reference this prompt version"),
   prompt_label_id: z.number().int().positive().optional().describe("Filter to tables/sheets that reference this prompt label"),
 };
-const SmartTableColumnTypeSchema = z.enum([
-  "TEXT",
-  "ABSOLUTE_NUMERIC_DISTANCE",
-  "AI_DATA_EXTRACTION",
-  "APPLY_DIFF",
-  "ASSERT_VALID",
-  "COALESCE",
-  "CONDITION",
-  "CODE_EXECUTION",
-  "COMBINE_COLUMNS",
-  "COMPARE",
-  "COMPOSITION",
-  "CONTAINS",
-  "CONVERSATION_SIMULATOR",
-  "COSINE_SIMILARITY",
-  "COUNT",
-  "DATASET",
-  "ENDPOINT",
-  "FOR_LOOP",
-  "HUMAN",
-  "JSON_PATH",
-  "LLM_ASSERTION",
-  "MATH_OPERATOR",
-  "MCP",
-  "MIN_MAX",
-  "PARSE_VALUE",
-  "PROMPT_TEMPLATE",
-  "REGEX",
-  "REGEX_EXTRACTION",
-  "VARIABLE",
-  "WHILE_LOOP",
-  "WORKFLOW",
-  "XML_PATH",
-]).describe("Smart Table column type. Use uppercase backend enum values.");
+const SmartTableColumnTypeSchema = z.preprocess(
+  (value) => {
+    if (typeof value !== "string") {
+      return value;
+    }
+    return normalizeSmartTableColumnType(value);
+  },
+  z.enum(SMART_TABLE_CREATABLE_COLUMN_TYPES as unknown as [string, ...string[]]),
+).describe(smartTableColumnTypeFieldDescription());
 const SmartCellStatusSchema = z.enum(["STALE", "QUEUED", "DISPATCHED", "RUNNING", "COMPLETED", "FAILED"]);
 const SmartTableColumnDependencySchema = z.object({
   column_id: UuidSchema.describe("Source column UUID"),
@@ -1298,16 +1279,7 @@ export const TOOL_DEFINITIONS = {
   },
   "create-smart-table-column": {
     name: "create-smart-table-column",
-    description:
-      "Add a column to a Smart Table sheet. Common types:\n" +
-      "  - PROMPT_TEMPLATE: run a prompt template against each row (e.g. regression testing or A/B comparison).\n" +
-      "  - LLM_ASSERTION: use an LLM to judge or assert something about a row's values.\n" +
-      "  - CODE_EXECUTION: run custom Python/JS logic per row.\n" +
-      "  - COMPARE: compare two column values side-by-side.\n" +
-      "  - CONTAINS / REGEX: string-matching checks.\n" +
-      "  - TEXT: static or manually entered text.\n" +
-      "  - DATASET: read a field from the imported dataset rows.\n" +
-      "Use uppercase type values. Columns can depend on other columns via the dependencies field.",
+    description: buildCreateSmartTableColumnToolDescription(),
     inputSchema: CreateSmartTableColumnArgsSchema,
     annotations: { readOnlyHint: false },
   },
