@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { TOOL_DEFINITIONS } from "../../src/types.js";
 import { PromptLayerClient } from "../../src/client.js";
+import { getBaseUrl } from "../../src/utils.js";
 
 // ── Tool handler mapping ────────────────────────────────────────────────────
 
@@ -245,7 +246,7 @@ function createMcpServer(defaultApiKey?: string): McpServer {
     server.tool(name, def.description, def.inputSchema.shape, async (args: Args) => {
       try {
         const apiKey = resolveApiKey(args.api_key as string | undefined, defaultApiKey);
-        const client = new PromptLayerClient(apiKey);
+        const client = new PromptLayerClient(apiKey, getBaseUrl());
         const result = await handler(client, args);
         return {
           content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
