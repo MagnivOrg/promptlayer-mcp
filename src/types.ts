@@ -1186,10 +1186,11 @@ export const TOOL_DEFINITIONS = {
   "create-smart-table": {
     name: "create-smart-table",
     description:
-      "Create a Smart Table. Tables are general-purpose — they can hold any tabular data and run " +
+      "Create a Smart Table with a default sheet and text column. Tables are general-purpose — they can hold any tabular data and run " +
       "computed columns (PROMPT_TEMPLATE, LLM_ASSERTION, CODE_EXECUTION, COMPARE, etc.) over rows. " +
       "Common uses include evaluations, regression testing, prompt comparisons, and dataset curation. " +
-      "After creating a table, add a sheet, then add columns and rows (or import request logs).",
+      "Response includes default_sheet: { id, title } for the created default sheet. Use default_sheet.id for next steps " +
+      "(create-smart-table-column, add-smart-table-rows, import request logs, etc.). Use create-smart-table-sheet only when adding an additional sheet from a file or request logs.",
     inputSchema: CreateSmartTableArgsSchema,
     annotations: { readOnlyHint: false },
   },
