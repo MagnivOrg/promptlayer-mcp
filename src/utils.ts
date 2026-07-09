@@ -28,6 +28,10 @@ export function getApiKey(providedKey?: string): string {
   return apiKey;
 }
 
+export function getBaseUrl(): string | undefined {
+  return process.env.PROMPTLAYER_BASE_URL || undefined;
+}
+
 export async function handleApiError(response: Response): Promise<Error> {
   let msg: string;
   try {
@@ -55,7 +59,7 @@ export function createToolHandler(
 ) {
   return async (args: Args) => {
     try {
-      const client = new PromptLayerClient(getApiKey(args.api_key));
+      const client = new PromptLayerClient(getApiKey(args.api_key), getBaseUrl());
       const result = await call(client, args);
       const json = JSON.stringify(result, null, 2);
       return {

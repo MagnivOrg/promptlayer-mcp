@@ -16,6 +16,17 @@ export PROMPTLAYER_API_KEY=pl_your_key_here
 
 Or create a `.env` file (see `.env.example`).
 
+### Self-hosted PromptLayer
+
+If you run a self-hosted PromptLayer instance, set `PROMPTLAYER_BASE_URL` to point the MCP server at it. When unset, it defaults to `https://api.promptlayer.com`. Note that this must be the **API domain** of your instance, not the web interface domain.
+
+```bash
+export PROMPTLAYER_BASE_URL=https://api.promptlayer.your-company.example.com
+export PROMPTLAYER_API_KEY=pl_your_key_here
+```
+
+The same variable can be passed in MCP client configs via the `env` block (see Claude Desktop / Cursor examples below).
+
 ## Usage
 
 ### With Claude Desktop

@@ -756,6 +756,11 @@ export const UpdateSmartTableArgsSchema = z.object({
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
+export const DeleteSmartTableArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID to delete"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
 export const ListSmartTableSheetsArgsSchema = z.object({
   table_id: UuidSchema.describe("Smart Table UUID"),
   ...CursorPaginationShape,
@@ -788,6 +793,12 @@ export const UpdateSmartTableSheetArgsSchema = z.object({
   sheet_id: UuidSchema.describe("Sheet UUID"),
   title: z.string().min(1).max(255).optional().describe("New sheet title"),
   index: z.number().int().min(0).optional().describe("New sheet index"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const DeleteSmartTableSheetArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID to delete"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -841,6 +852,13 @@ export const UpdateSmartTableColumnArgsSchema = z.object({
   title: z.string().min(1).max(255).optional().describe("New column title"),
   config: z.record(z.unknown()).nullable().optional().describe("Replacement column configuration"),
   dependencies: z.array(SmartTableColumnDependencySchema).nullable().optional().describe("Replacement column dependencies"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+export const DeleteSmartTableColumnArgsSchema = z.object({
+  table_id: UuidSchema.describe("Smart Table UUID"),
+  sheet_id: UuidSchema.describe("Sheet UUID"),
+  column_id: UuidSchema.describe("Column UUID to delete"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -1206,6 +1224,14 @@ export const TOOL_DEFINITIONS = {
     inputSchema: UpdateSmartTableArgsSchema,
     annotations: { readOnlyHint: false },
   },
+  "delete-smart-table": {
+    name: "delete-smart-table",
+    description:
+      "Delete a Smart Table by UUID. WARNING: This is destructive and cannot be undone. " +
+      "The table is removed from normal Smart Table listings.",
+    inputSchema: DeleteSmartTableArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
   "list-smart-table-sheets": {
     name: "list-smart-table-sheets",
     description: "List sheets in a Smart Table with cursor pagination.",
@@ -1232,6 +1258,14 @@ export const TOOL_DEFINITIONS = {
     name: "update-smart-table-sheet",
     description: "Update a Smart Table sheet title or index.",
     inputSchema: UpdateSmartTableSheetArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "delete-smart-table-sheet": {
+    name: "delete-smart-table-sheet",
+    description:
+      "Delete a sheet from a Smart Table. WARNING: This is destructive and cannot be undone. " +
+      "Use delete-smart-table to delete the whole table.",
+    inputSchema: DeleteSmartTableSheetArgsSchema,
     annotations: { readOnlyHint: false },
   },
   "get-smart-table-sheet-import-operation": {
@@ -1281,6 +1315,13 @@ export const TOOL_DEFINITIONS = {
     name: "update-smart-table-column",
     description: "Update a Smart Table column title, config, or dependencies. Column type and position are not changed by this tool.",
     inputSchema: UpdateSmartTableColumnArgsSchema,
+    annotations: { readOnlyHint: false },
+  },
+  "delete-smart-table-column": {
+    name: "delete-smart-table-column",
+    description:
+      "Delete a column from a Smart Table sheet, including its cells. WARNING: This is destructive and cannot be undone.",
+    inputSchema: DeleteSmartTableColumnArgsSchema,
     annotations: { readOnlyHint: false },
   },
   "list-smart-table-rows": {
