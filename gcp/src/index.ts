@@ -3,6 +3,7 @@ import pkg from "../../package.json";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { SMART_TABLE_COLUMN_TYPE_SERVER_INSTRUCTIONS } from "../../src/columnTypes.js";
+import { SNIPPET_PUBLISH_ORDERING_SERVER_INSTRUCTIONS } from "../../src/snippetPublishOrdering.js";
 import { TOOL_DEFINITIONS } from "../../src/types.js";
 import { PromptLayerClient } from "../../src/client.js";
 import { getBaseUrl } from "../../src/utils.js";
@@ -209,6 +210,8 @@ PromptLayer is a prompt management and observability platform. This MCP server l
 When editing a prompt that may contain snippets, always use get-prompt-template-raw with resolve_snippets=false. This preserves the raw @@@snippet_name@@@ references so they are not lost on re-publish. The response also includes a "snippets" array listing every snippet used.
 
 When publishing back, keep @@@snippet_name@@@ markers intact in the prompt_template content. Do not inline snippet text — this breaks the snippet reference and future snippet updates will no longer propagate.
+
+${SNIPPET_PUBLISH_ORDERING_SERVER_INSTRUCTIONS}
 
 Use get-prompt-template (the POST variant) only when you need a fully rendered prompt ready to send to an LLM, with input_variables filled in and provider-specific formatting applied.
 

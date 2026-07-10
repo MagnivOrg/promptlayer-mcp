@@ -4,6 +4,7 @@
  *   https://github.com/magnivorg/prompt-layer-docs/blob/master/openapi.json
  */
 
+import { PUBLISH_PROMPT_TEMPLATE_SNIPPET_ORDERING_NOTE } from "./snippetPublishOrdering.js";
 import { z } from "zod";
 import {
   SMART_TABLE_CREATABLE_COLUMN_TYPES,
@@ -1062,7 +1063,8 @@ export const TOOL_DEFINITIONS = {
       "Do not inline snippet text — this breaks snippet references. " +
       "To create a snippet (a reusable fragment referenced by other prompts), set " +
       "prompt_template.is_snippet=true on the first publish. The flag is only honored on initial " +
-      "creation; later versions cannot flip an existing template into a snippet or vice versa.",
+      "creation; later versions cannot flip an existing template into a snippet or vice versa. " +
+      PUBLISH_PROMPT_TEMPLATE_SNIPPET_ORDERING_NOTE,
     inputSchema: PublishPromptTemplateArgsSchema,
     annotations: { readOnlyHint: false },
   },
