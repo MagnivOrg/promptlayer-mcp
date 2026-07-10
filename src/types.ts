@@ -760,7 +760,10 @@ export const CreateSmartTableSheetArgsSchema = z.object({
   source: z.discriminatedUnion("type", [
     SmartTableSheetFileSourceSchema,
     SmartTableSheetRequestLogsSourceSchema,
-  ]).describe("Source for the new sheet: file or request_logs"),
+  ]).optional().describe(
+    "Optional data source for the new sheet. Omit to create a blank sheet with a default Column A scaffold, " +
+    "then add columns and rows incrementally. Use file or request_logs to seed rows on creation.",
+  ),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -1191,7 +1194,7 @@ export const TOOL_DEFINITIONS = {
       "computed columns (PROMPT_TEMPLATE, LLM_ASSERTION, CODE_EXECUTION, COMPARE, etc.) over rows. " +
       "Common uses include evaluations, regression testing, prompt comparisons, and dataset curation. " +
       "Response includes default_sheet: { id, title } for the created default sheet. Use default_sheet.id for next steps " +
-      "(create-smart-table-column, add-smart-table-rows, import request logs, etc.). Use create-smart-table-sheet only when adding an additional sheet from a file or request logs.",
+      "(create-smart-table-column, add-smart-table-rows, import request logs, etc.). Use create-smart-table-sheet to add another sheet — omit source for a blank sheet, or pass file/request_logs to seed rows on creation.",
     inputSchema: CreateSmartTableArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -1224,7 +1227,8 @@ export const TOOL_DEFINITIONS = {
   "create-smart-table-sheet": {
     name: "create-smart-table-sheet",
     description:
-      "Add a sheet (tab) to a Smart Table. Two source types:\n" +
+      "Add a sheet (tab) to a Smart Table.\n" +
+      "  - Omit source to create a blank sheet with a default Column A scaffold, then add columns and rows incrementally.\n" +
       "  - file: seed rows from a base64-encoded CSV or JSON file.\n" +
       "  - request_logs: import historical request logs from PromptLayer by filter or explicit IDs — " +
       "    use this to build datasets from real production traffic for evaluation or analysis.",
