@@ -985,7 +985,16 @@ export const ListSmartTableRowsArgsSchema = z.object({
 export const AddSmartTableRowsArgsSchema = z.object({
   table_id: UuidSchema.describe("Smart Table UUID"),
   sheet_id: UuidSchema.describe("Sheet UUID"),
-  count: z.number().int().min(1).max(100).optional().describe("Number of rows to add (default: 1, max: 100)"),
+  count: z
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe(
+      "Number of row shells to append (default: 1, max: 100). Use this to create N blank rows for computed columns — " +
+        "do not pad CSV file seeds with empty lines (those rows are skipped on import).",
+    ),
   values: z.array(z.record(z.unknown())).max(100).optional().describe("Optional row values, keyed by column UUID"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
@@ -1354,7 +1363,9 @@ export const TOOL_DEFINITIONS = {
       "Add a sheet (tab) to a Smart Table.\n" +
       "  - Omit source to create a blank sheet with a default Column A scaffold, then add columns and rows incrementally.\n" +
       "  - file: seed rows from a base64-encoded CSV or JSON file (only .csv and .json are supported). " +
-      "Provide title to name the sheet; if omitted, the title falls back to the file name stem.\n" +
+      "Provide title to name the sheet; if omitted, the title falls back to the file name stem. " +
+      "All-empty data rows (every cell empty, including blank lines) are skipped so CSVs stay dense; " +
+      "to create N blank row shells afterward, call add-smart-table-rows with count.\n" +
       "  - request_logs: import historical request logs from PromptLayer by filter or explicit IDs — " +
       "    use this to build datasets from real production traffic for evaluation or analysis.",
     inputSchema: CreateSmartTableSheetArgsSchema,
@@ -1388,7 +1399,10 @@ export const TOOL_DEFINITIONS = {
   },
   "import-smart-table-sheet-file": {
     name: "import-smart-table-sheet-file",
-    description: "Import base64 CSV content into an existing Smart Table sheet. Only .csv is supported (unlike create-smart-table-sheet file source, which also accepts JSON).",
+    description:
+      "Import base64 CSV content into an existing Smart Table sheet. Only .csv is supported " +
+      "(unlike create-smart-table-sheet file source, which also accepts JSON). " +
+      "All-empty data rows are skipped; use add-smart-table-rows with count for blank row shells.",
     inputSchema: ImportSmartTableSheetFileArgsSchema,
     annotations: { readOnlyHint: false },
   },
@@ -1435,7 +1449,10 @@ export const TOOL_DEFINITIONS = {
   },
   "add-smart-table-rows": {
     name: "add-smart-table-rows",
-    description: "Add up to 100 rows to a Smart Table sheet, optionally with values keyed by column UUID.",
+    description:
+      "Append up to 100 rows to a Smart Table sheet. Pass count to create blank row shells for computed columns " +
+      "(preferred over padding CSV file seeds with empty lines, which are skipped on import). " +
+      "Optionally pass values keyed by column UUID.",
     inputSchema: AddSmartTableRowsArgsSchema,
     annotations: { readOnlyHint: false },
   },
