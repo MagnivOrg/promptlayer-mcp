@@ -723,6 +723,13 @@ export const ListSmartTablesArgsSchema = z.object({
 export const CreateSmartTableArgsSchema = z.object({
   title: z.string().min(1).max(255).optional().describe("Table title. Omit for an auto-generated Untitled Table name."),
   folder_id: z.number().int().positive().optional().describe("Folder ID to place the table into"),
+  create_default_sheet: z
+    .boolean()
+    .optional()
+    .describe(
+      "Create the default empty Sheet 1 with one text column. Defaults to true when omitted (backward compatible). " +
+        "Set false when you will immediately create your own sheet (blank, file import, or request logs) to avoid an unused default sheet.",
+    ),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -1190,11 +1197,13 @@ export const TOOL_DEFINITIONS = {
   "create-smart-table": {
     name: "create-smart-table",
     description:
-      "Create a Smart Table with a default sheet and text column. Tables are general-purpose — they can hold any tabular data and run " +
+      "Create a Smart Table. By default creates an empty Sheet 1 with one text column (create_default_sheet=true). " +
+      "Set create_default_sheet=false to skip that sheet when you will immediately create your own " +
+      "(create-smart-table-sheet with blank/file/request_logs). Tables are general-purpose — they can hold any tabular data and run " +
       "computed columns (PROMPT_TEMPLATE, LLM_ASSERTION, CODE_EXECUTION, COMPARE, etc.) over rows. " +
       "Common uses include evaluations, regression testing, prompt comparisons, and dataset curation. " +
-      "Response includes default_sheet: { id, title } for the created default sheet. Use default_sheet.id for next steps " +
-      "(create-smart-table-column, add-smart-table-rows, import request logs, etc.). Use create-smart-table-sheet to add another sheet — omit source for a blank sheet, or pass file/request_logs to seed rows on creation.",
+      "When a default sheet is created, response includes default_sheet: { id, title }; use default_sheet.id for next steps " +
+      "(create-smart-table-column, add-smart-table-rows, import request logs, etc.). When create_default_sheet=false, default_sheet is omitted.",
     inputSchema: CreateSmartTableArgsSchema,
     annotations: { readOnlyHint: false },
   },
