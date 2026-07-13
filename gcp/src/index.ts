@@ -222,6 +222,8 @@ Smart Tables are general-purpose — use them for any tabular data and computati
 
 When creating a table you will immediately populate with create-smart-table-sheet, pass create_default_sheet=false to skip the unused default Sheet 1 (default true for backward compatibility).
 
+When seeding a sheet with create-smart-table-sheet source type "file", only CSV and JSON are supported. Pass title to name the sheet; if omitted, the title falls back to the file name stem. import-smart-table-sheet-file on an existing sheet accepts CSV only.
+
 To add historical request logs to a table, use import-smart-table-sheet-request-logs (on an existing sheet) or create-smart-table-sheet with source type "request_logs". To add a blank sheet, call create-smart-table-sheet with only table_id (and optional title/index).
 
 ${SMART_TABLE_COLUMN_TYPE_SERVER_INSTRUCTIONS}

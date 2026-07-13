@@ -151,11 +151,11 @@ Smart Tables are the recommended replacement for legacy datasets and evaluations
 | `get-smart-table` | Get a Smart Table by UUID. |
 | `update-smart-table` | Update a Smart Table title or folder. |
 | `list-smart-table-sheets` | List sheets in a Smart Table. |
-| `create-smart-table-sheet` | Create a sheet. Omit `source` for a blank sheet, or pass a file or request-log source to seed rows. |
+| `create-smart-table-sheet` | Create a sheet. Omit `source` for a blank sheet, or pass a file (CSV/JSON) or request-log source to seed rows. Explicit `title` is kept; otherwise file imports fall back to the file name stem. |
 | `get-smart-table-sheet` | Get a single sheet. |
 | `update-smart-table-sheet` | Update a sheet title or index. |
 | `get-smart-table-sheet-import-operation` | Get import operation status. |
-| `import-smart-table-sheet-file` | Import base64 CSV content into an existing sheet. |
+| `import-smart-table-sheet-file` | Import base64 CSV content into an existing sheet (`.csv` only). |
 | `import-smart-table-sheet-request-logs` | Import request logs into an existing sheet. |
 | `list-smart-table-columns` | List sheet columns. |
 | `create-smart-table-column` | Create a sheet column. |

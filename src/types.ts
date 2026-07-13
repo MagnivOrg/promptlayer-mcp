@@ -874,7 +874,9 @@ export const ListSmartTableSheetsArgsSchema = z.object({
 
 export const CreateSmartTableSheetArgsSchema = z.object({
   table_id: UuidSchema.describe("Smart Table UUID"),
-  title: z.string().min(1).max(255).optional().describe("Sheet title"),
+  title: z.string().min(1).max(255).optional().describe(
+    "Sheet title. When source=file, an explicit title is used; if omitted, falls back to the file name stem (CSV/JSON).",
+  ),
   index: z.number().int().min(0).optional().describe("Sheet index"),
   operation_id: z.string().min(1).max(255).optional().describe("Optional idempotency/status operation ID"),
   source: z.discriminatedUnion("type", [
@@ -917,7 +919,7 @@ export const ImportSmartTableSheetFileArgsSchema = z.object({
   table_id: UuidSchema.describe("Smart Table UUID"),
   sheet_id: UuidSchema.describe("Sheet UUID"),
   operation_id: z.string().optional().describe("Optional idempotency/status operation ID"),
-  file_name: z.string().min(1).max(255).describe("CSV file name"),
+  file_name: z.string().min(1).max(255).describe("CSV file name (.csv only for import into an existing sheet)"),
   file_content_base64: z.string().min(1).describe("Base64-encoded CSV content"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
@@ -1351,7 +1353,8 @@ export const TOOL_DEFINITIONS = {
     description:
       "Add a sheet (tab) to a Smart Table.\n" +
       "  - Omit source to create a blank sheet with a default Column A scaffold, then add columns and rows incrementally.\n" +
-      "  - file: seed rows from a base64-encoded CSV or JSON file.\n" +
+      "  - file: seed rows from a base64-encoded CSV or JSON file (only .csv and .json are supported). " +
+      "Provide title to name the sheet; if omitted, the title falls back to the file name stem.\n" +
       "  - request_logs: import historical request logs from PromptLayer by filter or explicit IDs — " +
       "    use this to build datasets from real production traffic for evaluation or analysis.",
     inputSchema: CreateSmartTableSheetArgsSchema,
@@ -1385,7 +1388,7 @@ export const TOOL_DEFINITIONS = {
   },
   "import-smart-table-sheet-file": {
     name: "import-smart-table-sheet-file",
-    description: "Import base64 CSV content into an existing Smart Table sheet.",
+    description: "Import base64 CSV content into an existing Smart Table sheet. Only .csv is supported (unlike create-smart-table-sheet file source, which also accepts JSON).",
     inputSchema: ImportSmartTableSheetFileArgsSchema,
     annotations: { readOnlyHint: false },
   },
