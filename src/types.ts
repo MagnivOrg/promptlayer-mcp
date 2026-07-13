@@ -592,8 +592,9 @@ const GROUP_BY_FIELD_VALUES = [
 const CustomChartSeriesSpecSchema = z.object({
   key: z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/).describe("Unique series key within the chart"),
   label: z.string().min(1).max(120).describe("Human-readable series label"),
-  metric: z.enum(["sum", "avg", "min", "max", "percentile"]).describe("Aggregation function"),
-  metricField: z.enum(METRIC_FIELD_VALUES).describe("Numeric field to aggregate"),
+  metric: z.enum(["count", "sum", "avg", "min", "max", "percentile", "distinct_count"]).describe("Aggregation function"),
+  metricField: z.enum(METRIC_FIELD_VALUES).optional().describe("Numeric field to aggregate. Required unless metric is count or distinct_count"),
+  distinctMetadataKey: z.string().min(1).max(120).optional().describe("Metadata key to count distinct values of. Required when metric is distinct_count"),
   percentile: z.number().min(0).max(100).optional().describe("Required when metric is percentile (0–100)"),
 });
 
@@ -606,11 +607,14 @@ const DerivedRatioInsightSchema = z.object({
 const CustomChartSpecSchema = z.object({
   id: z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/).describe("Stable chart id (unique within the request)"),
   title: z.string().max(200).optional().describe("Optional display title; defaults to id"),
-  chartType: z.enum(["bar", "line", "area"]).describe("Chart type. Overall aggregates (no timeSeries, no groupBy) must use bar"),
-  metric: z.enum(["count", "sum", "avg", "min", "max", "percentile"]).optional()
+  chartType: z.enum(["bar", "line", "area", "pie", "donut", "histogram", "heatmap", "treemap", "sunburst"])
+    .describe("Chart type. Overall aggregates (no timeSeries, no groupBy) must use bar"),
+  metric: z.enum(["count", "sum", "avg", "min", "max", "percentile", "distinct_count"]).optional()
     .describe("Aggregation function. Omit when using series (multi-series mode)"),
   metricField: z.enum(METRIC_FIELD_VALUES).optional()
-    .describe("Numeric field to aggregate. Required unless metric is count or using series"),
+    .describe("Numeric field to aggregate. Required unless metric is count/distinct_count or using series"),
+  distinctMetadataKey: z.string().min(1).max(120).optional()
+    .describe("Metadata key to count distinct values of. Required when metric is distinct_count"),
   percentile: z.number().min(0).max(100).optional().describe("Required when metric is percentile"),
   series: z.array(CustomChartSeriesSpecSchema).min(2).optional()
     .describe("Multi-series mode: two or more series specs. Omit metric/metricField when using this"),
@@ -620,7 +624,17 @@ const CustomChartSpecSchema = z.object({
     .describe("Break down by this request log field. Cannot be combined with groupByMetadataKey"),
   groupByMetadataKey: z.string().min(1).max(120).optional()
     .describe("Break down by values of this metadata key. Cannot be combined with groupByField"),
+  secondaryGroupByField: z.enum(GROUP_BY_FIELD_VALUES).optional()
+    .describe("Second breakdown dimension — heatmap charts only. Cannot be combined with secondaryGroupByMetadataKey"),
+  secondaryGroupByMetadataKey: z.string().min(1).max(120).optional()
+    .describe("Second breakdown by values of this metadata key — heatmap charts only"),
+  histogramField: z.enum(METRIC_FIELD_VALUES).optional()
+    .describe("Numeric field to bucket — histogram charts only"),
+  histogramInterval: z.number().positive().optional().describe("Histogram bucket width"),
+  hierarchyFields: z.array(z.enum(GROUP_BY_FIELD_VALUES)).min(2).max(5).optional()
+    .describe("Nested group-by levels — treemap and sunburst charts only"),
   timeSeries: z.boolean().optional().describe("Bucket results over time when true"),
+  timeBucket: z.enum(["auto", "day", "week", "month"]).optional().describe("Time bucket size when timeSeries is true"),
   limit: z.number().int().min(1).max(100).optional().describe("Max group-by buckets to return (default 25)"),
 });
 
@@ -1741,12 +1755,13 @@ export const TOOL_DEFINITIONS = {
     description:
       "Run custom analytics queries over request logs. You define which metrics to compute and how to slice them; the API runs the aggregations and returns structured data rows you can use however you want — charts, analysis, dashboards, or programmatic processing.\n\n" +
       "Each query spec in `customCharts` controls:\n" +
-      "  - `metric`: count | sum | avg | min | max | percentile (with optional `percentile` 0–100)\n" +
+      "  - `metric`: count | sum | avg | min | max | percentile (with `percentile` 0–100) | distinct_count (with `distinctMetadataKey`)\n" +
       "  - `metricField`: the numeric field to aggregate (input_tokens, output_tokens, cost, latency_ms, turn_count, tool_call_count, cached_tokens, thinking_tokens)\n" +
       "  - `groupByField`: break down by engine, provider_type, prompt_id, status, error_type, tags, etc.\n" +
       "  - `groupByMetadataKey`: break down by values of a specific metadata key\n" +
-      "  - `timeSeries: true`: bucket results over time\n" +
-      "  - `series`: multi-series mode — define two or more named series instead of a single metric\n\n" +
+      "  - `timeSeries: true`: bucket results over time (`timeBucket`: auto | day | week | month)\n" +
+      "  - `series`: multi-series mode — define two or more named series instead of a single metric\n" +
+      "  - chart shapes beyond bar/line/area: pie, donut, histogram (`histogramField`), heatmap (`secondaryGroupByField` or `secondaryGroupByMetadataKey`), treemap/sunburst (`hierarchyFields`)\n\n" +
       "Use this when get-request-analytics doesn't cover the slice you need. " +
       "Examples: cost by metadata environment, p95 latency over time by prompt, input vs output token ratio.",
     inputSchema: GetRequestAnalyticsCustomAnalyticsArgsSchema,
