@@ -592,8 +592,9 @@ const GROUP_BY_FIELD_VALUES = [
 const CustomChartSeriesSpecSchema = z.object({
   key: z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/).describe("Unique series key within the chart"),
   label: z.string().min(1).max(120).describe("Human-readable series label"),
-  metric: z.enum(["sum", "avg", "min", "max", "percentile"]).describe("Aggregation function"),
-  metricField: z.enum(METRIC_FIELD_VALUES).describe("Numeric field to aggregate"),
+  metric: z.enum(["count", "sum", "avg", "min", "max", "percentile", "distinct_count"]).describe("Aggregation function"),
+  metricField: z.enum(METRIC_FIELD_VALUES).optional().describe("Numeric field to aggregate. Required unless metric is count or distinct_count"),
+  distinctMetadataKey: z.string().min(1).max(120).optional().describe("Metadata key to count distinct values of. Required when metric is distinct_count"),
   percentile: z.number().min(0).max(100).optional().describe("Required when metric is percentile (0–100)"),
 });
 
@@ -606,11 +607,14 @@ const DerivedRatioInsightSchema = z.object({
 const CustomChartSpecSchema = z.object({
   id: z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/).describe("Stable chart id (unique within the request)"),
   title: z.string().max(200).optional().describe("Optional display title; defaults to id"),
-  chartType: z.enum(["bar", "line", "area"]).describe("Chart type. Overall aggregates (no timeSeries, no groupBy) must use bar"),
-  metric: z.enum(["count", "sum", "avg", "min", "max", "percentile"]).optional()
+  chartType: z.enum(["bar", "line", "area", "pie", "donut", "histogram", "heatmap", "treemap", "sunburst"])
+    .describe("Chart type. Overall aggregates (no timeSeries, no groupBy) must use bar"),
+  metric: z.enum(["count", "sum", "avg", "min", "max", "percentile", "distinct_count"]).optional()
     .describe("Aggregation function. Omit when using series (multi-series mode)"),
   metricField: z.enum(METRIC_FIELD_VALUES).optional()
-    .describe("Numeric field to aggregate. Required unless metric is count or using series"),
+    .describe("Numeric field to aggregate. Required unless metric is count/distinct_count or using series"),
+  distinctMetadataKey: z.string().min(1).max(120).optional()
+    .describe("Metadata key to count distinct values of. Required when metric is distinct_count"),
   percentile: z.number().min(0).max(100).optional().describe("Required when metric is percentile"),
   series: z.array(CustomChartSeriesSpecSchema).min(2).optional()
     .describe("Multi-series mode: two or more series specs. Omit metric/metricField when using this"),
@@ -620,7 +624,17 @@ const CustomChartSpecSchema = z.object({
     .describe("Break down by this request log field. Cannot be combined with groupByMetadataKey"),
   groupByMetadataKey: z.string().min(1).max(120).optional()
     .describe("Break down by values of this metadata key. Cannot be combined with groupByField"),
+  secondaryGroupByField: z.enum(GROUP_BY_FIELD_VALUES).optional()
+    .describe("Second breakdown dimension — heatmap charts only. Cannot be combined with secondaryGroupByMetadataKey"),
+  secondaryGroupByMetadataKey: z.string().min(1).max(120).optional()
+    .describe("Second breakdown by values of this metadata key — heatmap charts only"),
+  histogramField: z.enum(METRIC_FIELD_VALUES).optional()
+    .describe("Numeric field to bucket — histogram charts only"),
+  histogramInterval: z.number().positive().optional().describe("Histogram bucket width"),
+  hierarchyFields: z.array(z.enum(GROUP_BY_FIELD_VALUES)).min(2).max(5).optional()
+    .describe("Nested group-by levels — treemap and sunburst charts only"),
   timeSeries: z.boolean().optional().describe("Bucket results over time when true"),
+  timeBucket: z.enum(["auto", "day", "week", "month"]).optional().describe("Time bucket size when timeSeries is true"),
   limit: z.number().int().min(1).max(100).optional().describe("Max group-by buckets to return (default 25)"),
 });
 
@@ -628,6 +642,105 @@ export const GetRequestAnalyticsCustomAnalyticsArgsSchema = z.object({
   ...RequestLogQueryShape,
   customCharts: z.array(CustomChartSpecSchema).min(1)
     .describe("One or more analytics queries to compute. IDs must be unique within the request"),
+  api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
+});
+
+// ── Get Trace Analytics Custom Analytics (POST /api/public/v2/traces/analytics/custom-analytics) ──
+// Same chart engine as request custom analytics, but over trace documents.
+// Charts aggregate at one of two levels: whole traces (trace_* fields) or the
+// individual spans nested inside matching traces (span_* fields). A chart must
+// stay at one level; the backend rejects mixed-level charts.
+
+const TraceStructuredFilterSchema = z.object({
+  field: z.enum([
+    "trace_id", "trace_start", "trace_end", "trace_duration_ms", "trace_status",
+    "trace_total_cost_usd", "trace_total_tokens", "trace_input_tokens", "trace_output_tokens",
+    "trace_span_count", "trace_depth", "trace_run_by_user_id", "trace_models_used",
+    "trace_prompt_ids", "trace_prompt_version_refs", "trace_workflow_ids",
+    "trace_workflow_version_refs", "trace_tool_names", "trace_name",
+    "span_id", "span_name", "span_type", "span_kind", "span_status",
+    "span_duration_ms", "span_cost_usd", "span_tokens", "span_input_tokens", "span_output_tokens",
+    "span_models_used", "span_prompt_id", "span_prompt_version_number", "span_prompt_version_ref",
+    "span_workflow_id", "span_workflow_version_number", "span_workflow_version_ref",
+    "span_tool_name", "span_input_variables", "span_output_text", "span_exception_text",
+    "span_attributes", "span_resource", "span_depth", "span_total_child_count", "span_is_leaf",
+  ]).describe("Trace-level (trace_*) or span-level (span_*) field to filter on"),
+  operator: z.enum([
+    "is", "is_not", "in", "not_in",
+    "contains", "not_contains", "starts_with", "ends_with",
+    "eq", "neq", "gt", "gte", "lt", "lte", "between",
+    "before", "after",
+    "is_true", "is_false", "is_empty", "is_not_empty",
+    "is_null", "is_not_null",
+    "key_equals", "key_not_equals", "key_contains",
+  ]).describe("Filter operator (availability depends on field type)"),
+  value: z.unknown().optional().describe("Filter value (type depends on operator)"),
+  nested_key: z.string().optional().describe("Key name for nested span field operators (span_attributes, span_resource, span_input_variables)"),
+});
+
+const TraceStructuredFilterGroupSchema: z.ZodType = z.object({
+  logic: z.enum(["AND", "OR", "SPAN_AND", "SPAN_OR"]).optional().describe(
+    "AND/OR are cross-span (branches may be satisfied by different spans of the trace). " +
+    "SPAN_AND/SPAN_OR require one and the same span to satisfy every/any branch — span-level fields only"
+  ),
+  filters: z.array(z.union([TraceStructuredFilterSchema, z.lazy(() => TraceStructuredFilterGroupSchema)])).describe("Filters or nested filter groups"),
+});
+
+const TRACE_CHART_METRIC_FIELD_VALUES = [
+  // Trace-level
+  "trace_duration_ms", "trace_total_cost_usd", "trace_total_tokens",
+  "trace_input_tokens", "trace_output_tokens", "trace_span_count", "trace_depth",
+  // Span-level (nested spans of matching traces)
+  "span_duration_ms", "span_cost_usd", "span_tokens", "span_input_tokens", "span_output_tokens",
+] as const;
+
+const TRACE_CHART_GROUP_BY_FIELD_VALUES = [
+  // Trace-level
+  "trace_status", "trace_name", "trace_models_used",
+  "trace_prompt_ids", "trace_workflow_ids", "trace_tool_names",
+  // Span-level (nested spans of matching traces)
+  "span_tool_name", "span_name", "span_type", "span_kind", "span_status",
+] as const;
+
+const TraceCustomChartSeriesSpecSchema = z.object({
+  key: z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/).describe("Unique series key within the chart"),
+  label: z.string().min(1).max(120).describe("Human-readable series label"),
+  metric: z.enum(["sum", "avg", "min", "max", "percentile"]).describe("Aggregation function"),
+  metricField: z.enum(TRACE_CHART_METRIC_FIELD_VALUES).describe("Numeric field to aggregate"),
+  percentile: z.number().min(0).max(100).optional().describe("Required when metric is percentile (0–100)"),
+});
+
+const TraceCustomChartSpecSchema = z.object({
+  id: z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/).describe("Stable chart id (unique within the request)"),
+  title: z.string().max(200).optional().describe("Optional display title; defaults to id"),
+  chartType: z.enum(["bar", "line", "area", "pie", "donut", "histogram", "heatmap", "treemap", "sunburst"])
+    .describe("Chart type. Overall aggregates (no timeSeries, no groupBy) must use bar"),
+  metric: z.enum(["count", "sum", "avg", "min", "max", "percentile"]).optional()
+    .describe("Aggregation function. Omit when using series (multi-series mode)"),
+  metricField: z.enum(TRACE_CHART_METRIC_FIELD_VALUES).optional()
+    .describe("Numeric field to aggregate. Required unless metric is count or using series"),
+  percentile: z.number().min(0).max(100).optional().describe("Required when metric is percentile"),
+  series: z.array(TraceCustomChartSeriesSpecSchema).min(2).optional()
+    .describe("Multi-series mode: two or more series specs. Omit metric/metricField when using this"),
+  groupByField: z.enum(TRACE_CHART_GROUP_BY_FIELD_VALUES).optional()
+    .describe("Break down by this trace or span field"),
+  secondaryGroupByField: z.enum(TRACE_CHART_GROUP_BY_FIELD_VALUES).optional()
+    .describe("Second breakdown dimension — heatmap charts only"),
+  histogramField: z.enum(TRACE_CHART_METRIC_FIELD_VALUES).optional()
+    .describe("Numeric field to bucket — histogram charts only"),
+  histogramInterval: z.number().positive().optional().describe("Histogram bucket width (defaults per field)"),
+  hierarchyFields: z.array(z.enum(TRACE_CHART_GROUP_BY_FIELD_VALUES)).min(2).max(5).optional()
+    .describe("Nested group-by levels — treemap and sunburst charts only"),
+  timeSeries: z.boolean().optional().describe("Bucket results over time when true. Not supported with span-level fields"),
+  timeBucket: z.enum(["auto", "day", "week", "month"]).optional().describe("Time bucket size when timeSeries is true"),
+  limit: z.number().int().min(1).max(100).optional().describe("Max group-by buckets to return (default 25)"),
+});
+
+export const GetTraceAnalyticsCustomAnalyticsArgsSchema = z.object({
+  filter_group: TraceStructuredFilterGroupSchema.optional()
+    .describe("Trace filters selecting which traces participate (e.g. trace_name is 'agent-turn' plus a trace_start range). Applied before aggregation"),
+  customCharts: z.array(TraceCustomChartSpecSchema).min(1)
+    .describe("One or more analytics queries to compute. IDs must be unique within the request. Each chart must be all trace-level or all span-level fields"),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -1651,15 +1764,32 @@ export const TOOL_DEFINITIONS = {
     description:
       "Run custom analytics queries over request logs. You define which metrics to compute and how to slice them; the API runs the aggregations and returns structured data rows you can use however you want — charts, analysis, dashboards, or programmatic processing.\n\n" +
       "Each query spec in `customCharts` controls:\n" +
-      "  - `metric`: count | sum | avg | min | max | percentile (with optional `percentile` 0–100)\n" +
+      "  - `metric`: count | sum | avg | min | max | percentile (with `percentile` 0–100) | distinct_count (with `distinctMetadataKey`)\n" +
       "  - `metricField`: the numeric field to aggregate (input_tokens, output_tokens, cost, latency_ms, turn_count, tool_call_count, cached_tokens, thinking_tokens)\n" +
       "  - `groupByField`: break down by engine, provider_type, prompt_id, status, error_type, tags, etc.\n" +
       "  - `groupByMetadataKey`: break down by values of a specific metadata key\n" +
-      "  - `timeSeries: true`: bucket results over time\n" +
-      "  - `series`: multi-series mode — define two or more named series instead of a single metric\n\n" +
+      "  - `timeSeries: true`: bucket results over time (`timeBucket`: auto | day | week | month)\n" +
+      "  - `series`: multi-series mode — define two or more named series instead of a single metric\n" +
+      "  - chart shapes beyond bar/line/area: pie, donut, histogram (`histogramField`), heatmap (`secondaryGroupByField` or `secondaryGroupByMetadataKey`), treemap/sunburst (`hierarchyFields`)\n\n" +
       "Use this when get-request-analytics doesn't cover the slice you need. " +
       "Examples: cost by metadata environment, p95 latency over time by prompt, input vs output token ratio.",
     inputSchema: GetRequestAnalyticsCustomAnalyticsArgsSchema,
+    annotations: { readOnlyHint: true },
+  },
+
+  "get-trace-analytics-custom-analytics": {
+    name: "get-trace-analytics-custom-analytics",
+    description:
+      "Run custom analytics queries over traces. Same chart engine as get-request-analytics-custom-analytics, but aggregating trace documents at one of two levels:\n" +
+      "  - Trace-level (trace_* fields): measure whole traces — e.g. avg trace_duration_ms grouped by trace_name.\n" +
+      "  - Span-level (span_* fields): measure the individual spans inside matching traces — e.g. max span_duration_ms grouped by span_tool_name to find the slowest tools.\n\n" +
+      "`filter_group` selects which traces participate (trace_name, trace_start range, span existence conditions, etc.); span-level charts then aggregate across every span of those traces.\n\n" +
+      "Each chart must be all trace-level or all span-level fields — mixed levels are rejected. Span-level charts do not support timeSeries or metadata breakdowns.\n\n" +
+      "Examples: slowest tools across agent traces (groupByField: span_tool_name, metric: max, metricField: span_duration_ms); " +
+      "tool call counts (groupByField: span_tool_name, metric: count); " +
+      "span duration distribution (chartType: histogram, histogramField: span_duration_ms); " +
+      "trace cost by workflow (groupByField: trace_workflow_ids, metric: sum, metricField: trace_total_cost_usd).",
+    inputSchema: GetTraceAnalyticsCustomAnalyticsArgsSchema,
     annotations: { readOnlyHint: true },
   },
 

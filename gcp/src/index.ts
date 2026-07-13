@@ -52,6 +52,7 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
   "get-request-search-suggestions": (c, a) => c.getRequestSearchSuggestions(body(a)),
   "get-request-analytics": (c, a) => c.getRequestAnalytics(body(a)),
   "get-request-analytics-custom-analytics": (c, a) => c.getRequestAnalyticsCustomAnalytics(body(a)),
+  "get-trace-analytics-custom-analytics": (c, a) => c.getTraceAnalyticsCustomAnalytics(body(a)),
 
   // Tracking
   "log-request": (c, a) => c.logRequest(body(a)),

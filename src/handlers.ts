@@ -305,6 +305,9 @@ export function registerAllTools(server: any) {
   reg(t["get-request-analytics-custom-analytics"], (c, a) => c.getRequestAnalyticsCustomAnalytics(body(a)),
     (r) => { const charts = (r as { customCharts?: unknown[] }).customCharts ?? []; return `${charts.length} result(s) computed`; });
 
+  reg(t["get-trace-analytics-custom-analytics"], (c, a) => c.getTraceAnalyticsCustomAnalytics(body(a)),
+    (r) => { const charts = (r as { customCharts?: unknown[] }).customCharts ?? []; return `${charts.length} result(s) computed`; });
+
   // Prompt template patch
   reg(t["patch-prompt-template-version"],
     (c, a) => { const { api_key: _, identifier, ...b } = a as { identifier: string; api_key?: string } & Args; return c.patchPromptTemplateVersion(identifier, b); },
