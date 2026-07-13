@@ -224,6 +224,8 @@ When creating a table you will immediately populate with create-smart-table-shee
 
 When seeding a sheet with create-smart-table-sheet source type "file", only CSV and JSON are supported. Pass title to name the sheet; if omitted, the title falls back to the file name stem. import-smart-table-sheet-file on an existing sheet accepts CSV only.
 
+File imports keep CSVs dense: rows where every cell is empty (including blank lines) are skipped. To create N blank row shells for computed columns, do not pad the CSV with empty lines — call add-smart-table-rows with count (max 100 per call) after creating columns/schema.
+
 To add historical request logs to a table, use import-smart-table-sheet-request-logs (on an existing sheet) or create-smart-table-sheet with source type "request_logs". To add a blank sheet, call create-smart-table-sheet with only table_id (and optional title/index).
 
 ${SMART_TABLE_COLUMN_TYPE_SERVER_INSTRUCTIONS}

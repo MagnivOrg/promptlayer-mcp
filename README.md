@@ -151,17 +151,17 @@ Smart Tables are the recommended replacement for legacy datasets and evaluations
 | `get-smart-table` | Get a Smart Table by UUID. |
 | `update-smart-table` | Update a Smart Table title or folder. |
 | `list-smart-table-sheets` | List sheets in a Smart Table. |
-| `create-smart-table-sheet` | Create a sheet. Omit `source` for a blank sheet, or pass a file (CSV/JSON) or request-log source to seed rows. Explicit `title` is kept; otherwise file imports fall back to the file name stem. |
+| `create-smart-table-sheet` | Create a sheet. Omit `source` for a blank sheet, or pass a file (CSV/JSON) or request-log source to seed rows. Explicit `title` is kept; otherwise file imports fall back to the file name stem. All-empty CSV rows are skipped; use `add-smart-table-rows` with `count` for blank shells. |
 | `get-smart-table-sheet` | Get a single sheet. |
 | `update-smart-table-sheet` | Update a sheet title or index. |
 | `get-smart-table-sheet-import-operation` | Get import operation status. |
-| `import-smart-table-sheet-file` | Import base64 CSV content into an existing sheet (`.csv` only). |
+| `import-smart-table-sheet-file` | Import base64 CSV content into an existing sheet (`.csv` only). All-empty rows are skipped. |
 | `import-smart-table-sheet-request-logs` | Import request logs into an existing sheet. |
 | `list-smart-table-columns` | List sheet columns. |
 | `create-smart-table-column` | Create a sheet column. |
 | `update-smart-table-column` | Update a column title, config, or dependencies. |
 | `list-smart-table-rows` | List sheet rows. |
-| `add-smart-table-rows` | Add rows to a sheet. |
+| `add-smart-table-rows` | Add rows to a sheet. Use `count` for N blank row shells (max 100); do not pad CSVs with empty lines. |
 | `get-smart-table-cell` | Get a cell by UUID. |
 | `update-smart-table-cell` | Update a text cell. |
 | `recalculate-smart-table-cell` | Recalculate one computed cell. |
