@@ -220,6 +220,8 @@ Use get-prompt-template (the POST variant) only when you need a fully rendered p
 
 Smart Tables are general-purpose — use them for any tabular data and computation: evaluations, regression testing, prompt comparisons, dataset curation, or anything else. A typical flow is: create-smart-table → add a sheet (blank, from a file, or by importing historical request logs) → create columns → add rows or import more request logs → run a recalculate operation → optionally configure scoring and save a version snapshot.
 
+When creating a table you will immediately populate with create-smart-table-sheet, pass create_default_sheet=false to skip the unused default Sheet 1 (default true for backward compatibility).
+
 To add historical request logs to a table, use import-smart-table-sheet-request-logs (on an existing sheet) or create-smart-table-sheet with source type "request_logs". To add a blank sheet, call create-smart-table-sheet with only table_id (and optional title/index).
 
 ${SMART_TABLE_COLUMN_TYPE_SERVER_INSTRUCTIONS}
