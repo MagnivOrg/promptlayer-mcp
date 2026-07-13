@@ -37,6 +37,8 @@ Use get-prompt-template (the POST variant) only when you need a fully rendered p
 
 For new dataset or evaluation-style workflows, use Smart Tables instead of legacy datasets and reports. A typical flow is: create-smart-table, add or import sheets, create columns, add rows or import request logs, run recalculation operations, configure sheet scoring, and save versions.
 
+When seeding a sheet with create-smart-table-sheet source type "file", only CSV and JSON are supported. Pass title to name the sheet; if omitted, the title falls back to the file name stem. import-smart-table-sheet-file on an existing sheet accepts CSV only.
+
 ${SMART_TABLE_COLUMN_TYPE_SERVER_INSTRUCTIONS}
 
 Use the legacy migration tools to preview or convert existing dataset groups, datasets, and reports into Smart Tables.
