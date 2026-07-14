@@ -401,9 +401,24 @@ export const EditFolderArgsSchema = z.object({
 // NOTE: Not yet in the OpenAPI spec. Added from backend source.
 // Tracked as a known exception in scripts/diff-endpoints.ts.
 
+// Keep aligned with backend EntityType (POST/GET/DELETE /folders/entities).
 const EntityTypeEnum = z.enum([
-  "FOLDER", "PROMPT", "SNIPPET", "WORKFLOW", "DATASET", "REPORT", "AB_TEST", "INPUT_VARIABLE_SET",
+  "FOLDER",
+  "PROMPT",
+  "SNIPPET",
+  "WORKFLOW",
+  "DATASET",
+  "REPORT",
+  "AB_TEST",
+  "INPUT_VARIABLE_SET",
+  "SMART_TABLE",
+  "SKILL_COLLECTION",
+  "TOOL",
 ]);
+
+const FolderEntityIdSchema = z
+  .union([z.number().int(), z.string().uuid()])
+  .describe("Entity ID (numeric for most types; UUID string for SMART_TABLE)");
 
 export const GetFolderEntitiesArgsSchema = z.object({
   folder_id: z.number().int().optional().describe("Folder ID to list (root if omitted)"),
@@ -424,7 +439,7 @@ export const GetFolderEntitiesArgsSchema = z.object({
 
 export const MoveFolderEntitiesArgsSchema = z.object({
   entities: z.array(z.object({
-    id: z.number().int().describe("Entity ID"),
+    id: FolderEntityIdSchema,
     type: EntityTypeEnum.describe("Entity type"),
   })).describe("Entities to move"),
   folder_id: z.number().int().optional().describe("Target folder ID (root if omitted)"),
@@ -437,7 +452,7 @@ export const MoveFolderEntitiesArgsSchema = z.object({
 
 export const DeleteFolderEntitiesArgsSchema = z.object({
   entities: z.array(z.object({
-    id: z.number().int().describe("Entity ID"),
+    id: FolderEntityIdSchema,
     type: EntityTypeEnum.describe("Entity type"),
   })).describe("Entities to delete"),
   cascade: z.boolean().optional().describe("Delete folder contents recursively (default: false)"),
@@ -1704,19 +1719,22 @@ export const TOOL_DEFINITIONS = {
   },
   "get-folder-entities": {
     name: "get-folder-entities",
-    description: "List entities (prompts, agents, datasets, evaluations, folders, etc.) in a folder. Returns root-level entities if folder_id is omitted. Use flatten=true to include all nested contents. Supports search and type filtering.",
+    description:
+      "List entities (prompts, agents, datasets, evaluations, folders, tools, skill collections, smart tables, etc.) in a folder. Returns root-level entities if folder_id is omitted. Use flatten=true to include all nested contents. Supports search and type filtering.",
     inputSchema: GetFolderEntitiesArgsSchema,
     annotations: { readOnlyHint: true },
   },
   "move-folder-entities": {
     name: "move-folder-entities",
-    description: "Move entities (prompts, agents, datasets, evaluations, folders) into a target folder. Omit folder_id to move to workspace root.",
+    description:
+      "Move entities (prompts, agents, datasets, evaluations, folders, tools, skill collections, smart tables) into a target folder. Omit folder_id to move to workspace root.",
     inputSchema: MoveFolderEntitiesArgsSchema,
     annotations: { readOnlyHint: false },
   },
   "delete-folder-entities": {
     name: "delete-folder-entities",
-    description: "Permanently delete entities (prompts, agents, datasets, evaluations, folders). WARNING: This is destructive and cannot be undone. Use cascade=true to recursively delete all folder contents.",
+    description:
+      "Permanently delete entities (prompts, agents, datasets, evaluations, folders, tools, skill collections, smart tables). WARNING: This is destructive and cannot be undone. Use cascade=true to recursively delete all folder contents.",
     inputSchema: DeleteFolderEntitiesArgsSchema,
     annotations: { readOnlyHint: false },
   },
