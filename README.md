@@ -160,10 +160,10 @@ Smart Tables are the recommended replacement for legacy datasets and evaluations
 | `list-smart-table-columns` | List sheet columns. |
 | `create-smart-table-column` | Create a sheet column. |
 | `update-smart-table-column` | Update a column title, config, or dependencies. |
-| `list-smart-table-rows` | List sheet rows. |
-| `add-smart-table-rows` | Add rows to a sheet. Use `count` for N blank row shells (max 100); do not pad CSVs with empty lines. |
-| `get-smart-table-cell` | Get a cell by UUID. |
-| `update-smart-table-cell` | Update a text cell. |
+| `list-smart-table-rows` | List sheet rows. Cells include `display_value`, nested `value.value`, and `last_computed_version`. |
+| `add-smart-table-rows` | Add rows. Use `count` for N blank row shells (max 100); do not pad CSVs with empty lines. Optional `values` are `[{column_uuid: rawText}, ...]` for TEXT columns only. |
+| `get-smart-table-cell` | Get a cell by UUID (`display_value`, `value.value`, `last_computed_version`). |
+| `update-smart-table-cell` | Update a TEXT cell (`display_value` or `{"value": "..."}`). Recalculate computed cells instead. |
 | `recalculate-smart-table-cell` | Recalculate one computed cell. |
 | `recalculate-smart-table-cells` | Recalculate multiple computed cells. |
 | `list-smart-table-operations` | List active sheet operations and status counts. |

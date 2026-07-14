@@ -12,6 +12,15 @@ import {
   normalizeSmartTableColumnType,
   smartTableColumnTypeFieldDescription,
 } from "./columnTypes.js";
+import {
+  ADD_SMART_TABLE_ROWS_VALUES_DESCRIPTION,
+  UPDATE_SMART_TABLE_CELL_DISPLAY_VALUE_DESCRIPTION,
+  UPDATE_SMART_TABLE_CELL_VALUE_DESCRIPTION,
+  buildAddSmartTableRowsToolDescription,
+  buildGetSmartTableCellToolDescription,
+  buildListSmartTableRowsToolDescription,
+  buildUpdateSmartTableCellToolDescription,
+} from "./smartTablePayloads.js";
 
 
 // ── Get Prompt Template (POST /prompt-templates/{identifier}) ────────────
@@ -1010,7 +1019,11 @@ export const AddSmartTableRowsArgsSchema = z.object({
       "Number of row shells to append (default: 1, max: 100). Use this to create N blank rows for computed columns — " +
         "do not pad CSV file seeds with empty lines (those rows are skipped on import).",
     ),
-  values: z.array(z.record(z.unknown())).max(100).optional().describe("Optional row values, keyed by column UUID"),
+  values: z
+    .array(z.record(z.unknown()))
+    .max(100)
+    .optional()
+    .describe(ADD_SMART_TABLE_ROWS_VALUES_DESCRIPTION),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -1025,8 +1038,12 @@ export const UpdateSmartTableCellArgsSchema = z.object({
   table_id: UuidSchema.describe("Smart Table UUID"),
   sheet_id: UuidSchema.describe("Sheet UUID"),
   cell_id: UuidSchema.describe("Cell UUID"),
-  display_value: z.string().nullable().optional().describe("Text to display for a text cell"),
-  value: z.unknown().optional().describe("Structured cell value"),
+  display_value: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(UPDATE_SMART_TABLE_CELL_DISPLAY_VALUE_DESCRIPTION),
+  value: z.unknown().optional().describe(UPDATE_SMART_TABLE_CELL_VALUE_DESCRIPTION),
   api_key: z.string().optional().describe("PromptLayer API key (optional, defaults to PROMPTLAYER_API_KEY env var)"),
 });
 
@@ -1458,28 +1475,25 @@ export const TOOL_DEFINITIONS = {
   },
   "list-smart-table-rows": {
     name: "list-smart-table-rows",
-    description: "List rows in a Smart Table sheet with optional column metadata and row counts.",
+    description: buildListSmartTableRowsToolDescription(),
     inputSchema: ListSmartTableRowsArgsSchema,
     annotations: { readOnlyHint: true },
   },
   "add-smart-table-rows": {
     name: "add-smart-table-rows",
-    description:
-      "Append up to 100 rows to a Smart Table sheet. Pass count to create blank row shells for computed columns " +
-      "(preferred over padding CSV file seeds with empty lines, which are skipped on import). " +
-      "Optionally pass values keyed by column UUID.",
+    description: buildAddSmartTableRowsToolDescription(),
     inputSchema: AddSmartTableRowsArgsSchema,
     annotations: { readOnlyHint: false },
   },
   "get-smart-table-cell": {
     name: "get-smart-table-cell",
-    description: "Get a Smart Table cell by UUID.",
+    description: buildGetSmartTableCellToolDescription(),
     inputSchema: GetSmartTableCellArgsSchema,
     annotations: { readOnlyHint: true },
   },
   "update-smart-table-cell": {
     name: "update-smart-table-cell",
-    description: "Update a Smart Table text cell. Computed cells should be recalculated instead.",
+    description: buildUpdateSmartTableCellToolDescription(),
     inputSchema: UpdateSmartTableCellArgsSchema,
     annotations: { readOnlyHint: false },
   },

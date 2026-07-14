@@ -4,6 +4,7 @@ import { createRequire } from "node:module";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { SMART_TABLE_COLUMN_TYPE_SERVER_INSTRUCTIONS } from "./columnTypes.js";
+import { SMART_TABLE_ROW_CELL_PAYLOAD_SERVER_INSTRUCTIONS } from "./smartTablePayloads.js";
 import { SNIPPET_PUBLISH_ORDERING_SERVER_INSTRUCTIONS } from "./snippetPublishOrdering.js";
 import { registerAllTools } from "./handlers.js";
 
@@ -44,6 +45,8 @@ When seeding a sheet with create-smart-table-sheet source type "file", only CSV 
 File imports keep CSVs dense: rows where every cell is empty (including blank lines) are skipped. To create N blank row shells for computed columns, do not pad the CSV with empty lines — call add-smart-table-rows with count (max 100 per call) after creating columns/schema.
 
 ${SMART_TABLE_COLUMN_TYPE_SERVER_INSTRUCTIONS}
+
+${SMART_TABLE_ROW_CELL_PAYLOAD_SERVER_INSTRUCTIONS}
 
 Use the legacy migration tools to preview or convert existing dataset groups, datasets, and reports into Smart Tables.
 

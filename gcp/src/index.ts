@@ -3,6 +3,7 @@ import pkg from "../../package.json";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { SMART_TABLE_COLUMN_TYPE_SERVER_INSTRUCTIONS } from "../../src/columnTypes.js";
+import { SMART_TABLE_ROW_CELL_PAYLOAD_SERVER_INSTRUCTIONS } from "../../src/smartTablePayloads.js";
 import { SNIPPET_PUBLISH_ORDERING_SERVER_INSTRUCTIONS } from "../../src/snippetPublishOrdering.js";
 import { TOOL_DEFINITIONS } from "../../src/types.js";
 import { PromptLayerClient } from "../../src/client.js";
@@ -229,6 +230,8 @@ File imports keep CSVs dense: rows where every cell is empty (including blank li
 To add historical request logs to a table, use import-smart-table-sheet-request-logs (on an existing sheet) or create-smart-table-sheet with source type "request_logs". To add a blank sheet, call create-smart-table-sheet with only table_id (and optional title/index).
 
 ${SMART_TABLE_COLUMN_TYPE_SERVER_INSTRUCTIONS}
+
+${SMART_TABLE_ROW_CELL_PAYLOAD_SERVER_INSTRUCTIONS}
 
 Use the legacy migration tools to preview or convert existing dataset groups, datasets, and reports into Smart Tables.
 
