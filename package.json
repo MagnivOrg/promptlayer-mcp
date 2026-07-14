@@ -1,6 +1,6 @@
 {
   "name": "@promptlayer/mcp-server",
-  "version": "1.19.2",
+  "version": "1.20.0",
   "description": "Model Context Protocol server for PromptLayer",
   "type": "module",
   "main": "build/index.js",
