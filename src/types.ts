@@ -188,7 +188,7 @@ export const LogRequestArgsSchema = z.object({
   price: z.number().optional().describe("Cost of the request"),
   function_name: z.string().optional().describe("Name of the function called"),
   score: z.number().int().optional().describe("Score between 0-100"),
-  api_type: z.string().optional().describe("API type: openai/azure -> 'chat-completions' | 'responses' | 'images'; openrouter -> 'chat-completions' | 'images' | 'video' | 'speech'"),
+  api_type: z.string().optional().describe("API type: openai/azure -> 'chat-completions' | 'responses' | 'images'; openrouter -> 'chat' | 'images' | 'video' | 'speech'"),
   status: z.enum(["SUCCESS", "WARNING", "ERROR"]).optional().describe("Request status (default: SUCCESS)"),
   error_type: z.enum([
     "PROVIDER_TIMEOUT", "PROVIDER_QUOTA_LIMIT", "PROVIDER_RATE_LIMIT",
