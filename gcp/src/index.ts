@@ -299,14 +299,46 @@ async function handleMcp(req: express.Request, res: express.Response) {
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
   });
+  // Log protocol-level rejections (bad JSON-RPC, unsupported protocol version, ...)
+  // so 4xx responses are diagnosable. Messages come from the SDK, not request bodies.
+  transport.onerror = (error) => console.warn(`MCP transport error: ${error.message}`);
   const server = createMcpServer(apiKey);
-  await server.connect(transport);
-  await transport.handleRequest(req, res, req.body);
+  res.on("close", () => {
+    void transport.close();
+    void server.close();
+  });
+
+  try {
+    await server.connect(transport);
+    await transport.handleRequest(req, res, req.body);
+  } catch (error) {
+    console.error("Error handling MCP request:", error);
+    if (!res.headersSent) {
+      res.status(500).json({
+        jsonrpc: "2.0",
+        error: { code: -32603, message: "Internal server error" },
+        id: null,
+      });
+    }
+  }
+}
+
+// This server is stateless: every POST gets its own transport, so there is no
+// session a standalone GET SSE stream could ever deliver messages on. Opening
+// one just holds the connection idle until App Engine's 10-minute request
+// deadline kills it (logged as a 500, and the instance process is terminated).
+// The spec allows 405 here; clients then fall back to POST-only.
+function methodNotAllowed(_req: express.Request, res: express.Response) {
+  res.status(405).set("Allow", "POST").json({
+    jsonrpc: "2.0",
+    error: { code: -32000, message: "Method not allowed." },
+    id: null,
+  });
 }
 
 app.post("/mcp", handleMcp);
-app.get("/mcp", handleMcp);
-app.delete("/mcp", handleMcp);
+app.get("/mcp", methodNotAllowed);
+app.delete("/mcp", methodNotAllowed);
 
 const PORT = parseInt(process.env.PORT || "8080");
 app.listen(PORT, () => {
