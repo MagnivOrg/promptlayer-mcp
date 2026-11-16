@@ -8,6 +8,7 @@
     "promptlayer-mcp": "build/index.js"
   },
   "scripts": {
+    "test": "npm run build && npm --prefix gcp run build && node --test tests/*.test.mjs",
     "build": "tsc && chmod +x build/index.js",
     "prepare": "npm run build",
     "watch": "tsc --watch",

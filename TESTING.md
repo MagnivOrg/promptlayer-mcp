@@ -1,5 +1,10 @@
 # Keeping the MCP in Sync with PromptLayer REST API
 
+## Tool annotation regression tests
+
+Run `npm ci` and `npm --prefix gcp ci`, then `npm test` from the repository root.
+This checks the annotations returned by `tools/list` over both stdio and hosted HTTP without calling the PromptLayer API.
+
 ## Quick Start
 
 ```bash

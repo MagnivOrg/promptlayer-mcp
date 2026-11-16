@@ -264,7 +264,7 @@ function createMcpServer(defaultApiKey?: string): McpServer {
     const handler = TOOL_HANDLERS[name];
     if (!handler) continue;
 
-    server.tool(name, def.description, def.inputSchema.shape, async (args: Args) => {
+    server.tool(name, def.description, def.inputSchema.shape, def.annotations, async (args: Args) => {
       try {
         const apiKey = resolveApiKey(args.api_key as string | undefined, defaultApiKey);
         const client = new PromptLayerClient(apiKey, getBaseUrl());
@@ -341,6 +341,8 @@ app.get("/mcp", methodNotAllowed);
 app.delete("/mcp", methodNotAllowed);
 
 const PORT = parseInt(process.env.PORT || "8080");
-app.listen(PORT, () => {
-  console.log(`PromptLayer MCP server listening on port ${PORT}`);
+const listener = app.listen(PORT, () => {
+  const address = listener.address();
+  const port = address && typeof address !== "string" ? address.port : PORT;
+  console.log(`PromptLayer MCP server listening on port ${port}`);
 });
