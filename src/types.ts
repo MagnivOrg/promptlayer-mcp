@@ -1232,7 +1232,7 @@ export const TOOL_DEFINITIONS = {
       "creation; later versions cannot flip an existing template into a snippet or vice versa. " +
       PUBLISH_PROMPT_TEMPLATE_SNIPPET_ORDERING_NOTE,
     inputSchema: PublishPromptTemplateArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "list-prompt-template-labels": {
     name: "list-prompt-template-labels",
@@ -1244,19 +1244,19 @@ export const TOOL_DEFINITIONS = {
     name: "create-prompt-label",
     description: "Attach a release label to a prompt template version. Requires prompt_id (path) and body with prompt_version_number and label name.",
     inputSchema: CreatePromptLabelArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "move-prompt-label": {
     name: "move-prompt-label",
     description: "Move a release label to a different prompt version. Provide prompt_version_number to reassign the label.",
     inputSchema: MovePromptLabelArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "delete-prompt-label": {
     name: "delete-prompt-label",
     description: "Delete a release label from a prompt template version.",
     inputSchema: DeletePromptLabelArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: true },
   },
   "get-snippet-usage": {
     name: "get-snippet-usage",
@@ -1330,13 +1330,13 @@ export const TOOL_DEFINITIONS = {
       "format: {type:'chat', messages:[{role, content:[{type:'text', text}]}]}. " +
       "Supports structured outputs, tool calls, extended thinking, and error tracking.",
     inputSchema: LogRequestArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "create-spans-bulk": {
     name: "create-spans-bulk",
     description: "Create OpenTelemetry-compatible spans in bulk for distributed tracing. Each span can optionally include a log_request.",
     inputSchema: CreateSpansBulkArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
 
   // ── Smart Tables ───────────────────────────────────────────────────
@@ -1361,7 +1361,7 @@ export const TOOL_DEFINITIONS = {
       "When a default sheet is created, response includes default_sheet: { id, title }; use default_sheet.id for next steps " +
       "(create-smart-table-column, add-smart-table-rows, import request logs, etc.). When create_default_sheet=false, default_sheet is omitted.",
     inputSchema: CreateSmartTableArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "get-smart-table": {
     name: "get-smart-table",
@@ -1373,7 +1373,7 @@ export const TOOL_DEFINITIONS = {
     name: "update-smart-table",
     description: "Update a Smart Table title or folder.",
     inputSchema: UpdateSmartTableArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "delete-smart-table": {
     name: "delete-smart-table",
@@ -1381,7 +1381,7 @@ export const TOOL_DEFINITIONS = {
       "Delete a Smart Table by UUID. WARNING: This is destructive and cannot be undone. " +
       "The table is removed from normal Smart Table listings.",
     inputSchema: DeleteSmartTableArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: true },
   },
   "list-smart-table-sheets": {
     name: "list-smart-table-sheets",
@@ -1401,7 +1401,7 @@ export const TOOL_DEFINITIONS = {
       "  - request_logs: import historical request logs from PromptLayer by filter or explicit IDs — " +
       "    use this to build datasets from real production traffic for evaluation or analysis.",
     inputSchema: CreateSmartTableSheetArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "get-smart-table-sheet": {
     name: "get-smart-table-sheet",
@@ -1413,7 +1413,7 @@ export const TOOL_DEFINITIONS = {
     name: "update-smart-table-sheet",
     description: "Update a Smart Table sheet title or index.",
     inputSchema: UpdateSmartTableSheetArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "delete-smart-table-sheet": {
     name: "delete-smart-table-sheet",
@@ -1421,7 +1421,7 @@ export const TOOL_DEFINITIONS = {
       "Delete a sheet from a Smart Table. WARNING: This is destructive and cannot be undone. " +
       "Use delete-smart-table to delete the whole table.",
     inputSchema: DeleteSmartTableSheetArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: true },
   },
   "get-smart-table-sheet-import-operation": {
     name: "get-smart-table-sheet-import-operation",
@@ -1436,7 +1436,7 @@ export const TOOL_DEFINITIONS = {
       "(unlike create-smart-table-sheet file source, which also accepts JSON). " +
       "All-empty data rows are skipped; use add-smart-table-rows with count for blank row shells.",
     inputSchema: ImportSmartTableSheetFileArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "import-smart-table-sheet-request-logs": {
     name: "import-smart-table-sheet-request-logs",
@@ -1446,7 +1446,7 @@ export const TOOL_DEFINITIONS = {
       "metadata, date range, status, etc.). Use this to add production traffic rows to a table for " +
       "evaluation, comparison, or any other analysis.",
     inputSchema: ImportSmartTableSheetRequestLogsArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "list-smart-table-columns": {
     name: "list-smart-table-columns",
@@ -1458,20 +1458,20 @@ export const TOOL_DEFINITIONS = {
     name: "create-smart-table-column",
     description: buildCreateSmartTableColumnToolDescription(),
     inputSchema: CreateSmartTableColumnArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "update-smart-table-column": {
     name: "update-smart-table-column",
     description: "Update a Smart Table column title, config, or dependencies. Column type and position are not changed by this tool.",
     inputSchema: UpdateSmartTableColumnArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: true },
   },
   "delete-smart-table-column": {
     name: "delete-smart-table-column",
     description:
       "Delete a column from a Smart Table sheet, including its cells. WARNING: This is destructive and cannot be undone.",
     inputSchema: DeleteSmartTableColumnArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: true },
   },
   "list-smart-table-rows": {
     name: "list-smart-table-rows",
@@ -1483,7 +1483,7 @@ export const TOOL_DEFINITIONS = {
     name: "add-smart-table-rows",
     description: buildAddSmartTableRowsToolDescription(),
     inputSchema: AddSmartTableRowsArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "get-smart-table-cell": {
     name: "get-smart-table-cell",
@@ -1495,19 +1495,19 @@ export const TOOL_DEFINITIONS = {
     name: "update-smart-table-cell",
     description: buildUpdateSmartTableCellToolDescription(),
     inputSchema: UpdateSmartTableCellArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: true },
   },
   "recalculate-smart-table-cell": {
     name: "recalculate-smart-table-cell",
     description: "Queue recalculation for one Smart Table computed cell.",
     inputSchema: RecalculateSmartTableCellArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: true },
   },
   "recalculate-smart-table-cells": {
     name: "recalculate-smart-table-cells",
     description: "Queue recalculation for multiple Smart Table computed cells.",
     inputSchema: RecalculateSmartTableCellsArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: true },
   },
   "list-smart-table-operations": {
     name: "list-smart-table-operations",
@@ -1523,7 +1523,7 @@ export const TOOL_DEFINITIONS = {
       "Scope the run with column_ids, row_ids, or statuses (e.g. only STALE cells). " +
       "Returns an operation_id to poll with get-smart-table-operation.",
     inputSchema: CreateSmartTableOperationArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: true },
   },
   "get-smart-table-operation": {
     name: "get-smart-table-operation",
@@ -1535,7 +1535,7 @@ export const TOOL_DEFINITIONS = {
     name: "cancel-smart-table-operation",
     description: "Cancel an active Smart Table sheet operation.",
     inputSchema: CancelSmartTableOperationArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: true },
   },
   "get-smart-table-score": {
     name: "get-smart-table-score",
@@ -1553,13 +1553,13 @@ export const TOOL_DEFINITIONS = {
       "(auto, boolean, numeric, or custom), supply custom Python/JS aggregation code, or pass a full " +
       "score_config object.",
     inputSchema: ConfigureSmartTableScoreArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "recalculate-smart-table-score": {
     name: "recalculate-smart-table-score",
     description: "Recompute the aggregate score for a Smart Table sheet.",
     inputSchema: RecalculateSmartTableScoreArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: true },
   },
   "list-smart-table-versions": {
     name: "list-smart-table-versions",
@@ -1581,7 +1581,7 @@ export const TOOL_DEFINITIONS = {
       "Save a named snapshot of a Smart Table sheet's current state — useful for capturing results " +
       "before making changes so you can compare later. Pass source_version_id to restore a prior snapshot.",
     inputSchema: CreateSmartTableVersionArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: true },
   },
   "get-smart-table-score-history": {
     name: "get-smart-table-score-history",
@@ -1607,7 +1607,7 @@ export const TOOL_DEFINITIONS = {
     name: "migrate-legacy-to-smart-table",
     description: "Start or dry-run conversion of a legacy dataset group, dataset, or report into a Smart Table.",
     inputSchema: MigrateLegacyToSmartTableArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "get-legacy-smart-table-migration-job": {
     name: "get-legacy-smart-table-migration-job",
@@ -1627,19 +1627,19 @@ export const TOOL_DEFINITIONS = {
     name: "create-workflow",
     description: "Create a new agent (called 'workflow' in the API) or a new version of an existing one. For new: use 'name'. For versioning: use workflow_id or workflow_name.",
     inputSchema: CreateWorkflowArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "patch-workflow": {
     name: "patch-workflow",
     description: "Partially update an agent. Merges node changes into a new version. Set a node value to null to remove it.",
     inputSchema: PatchWorkflowArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "run-workflow": {
     name: "run-workflow",
     description: "Execute an agent by name. Returns results synchronously, or returns immediately with an execution ID if callback_url is set for async webhook delivery.",
     inputSchema: RunWorkflowArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: true },
   },
   "get-workflow-version-execution-results": {
     name: "get-workflow-version-execution-results",
@@ -1677,19 +1677,19 @@ export const TOOL_DEFINITIONS = {
     name: "create-tool-registry",
     description: "Create a new tool in the Tool Registry with an initial version. The tool definition should be in OpenAI function-calling format. Pass an optional `execution` payload to attach a sandbox-executable body that PromptLayer will auto-run between LLM turns.",
     inputSchema: CreateToolRegistryArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "create-tool-version": {
     name: "create-tool-version",
     description: "Create a new version of an existing tool in the Tool Registry. Each version is immutable - this adds a new version with the updated definition. Pass an optional `execution` payload to attach (or replace) the sandbox-executable body for this version.",
     inputSchema: CreateToolVersionArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "test-execute-tool-registry": {
     name: "test-execute-tool-registry",
     description: "Run a tool's execution body in the sandbox against test inputs. Returns the body's return value plus stdout/stderr/duration. Useful for verifying a body before publishing. Pass `execution` and/or `tool_definition` to test unsaved overrides without creating a version. User-code errors return status='error' inside the result (HTTP 200); sandbox infrastructure failures return HTTP 502.",
     inputSchema: TestExecuteToolRegistryArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: true },
   },
 
   // ── Env Vars ────────────────────────────────────────────────────────
@@ -1703,7 +1703,7 @@ export const TOOL_DEFINITIONS = {
     name: "create-workspace-env-var",
     description: "Scaffold a workspace-scoped environment variable placeholder. Auto-injected into every auto-executing tool in this workspace. The value is always created empty; the user fills in the real value via Settings, Environment Variables. Key must match ^[A-Za-z_][A-Za-z0-9_]*$ and not collide with reserved runtime names.",
     inputSchema: CreateWorkspaceEnvVarArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "list-tool-env-vars": {
     name: "list-tool-env-vars",
@@ -1715,7 +1715,7 @@ export const TOOL_DEFINITIONS = {
     name: "create-tool-env-var",
     description: "Scaffold a tool-scoped environment variable placeholder on a specific tool. Auto-injected only into THIS tool's sandbox execution and overrides any workspace-scoped var with the same key. The value is always created empty; the user fills in the real value via Settings.",
     inputSchema: CreateToolEnvVarArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
 
   // ── Folders ─────────────────────────────────────────────────────────
@@ -1723,13 +1723,13 @@ export const TOOL_DEFINITIONS = {
     name: "create-folder",
     description: "Create a folder for organizing resources. Nest with parent_id. Names unique within parent.",
     inputSchema: CreateFolderArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "edit-folder": {
     name: "edit-folder",
     description: "Rename a folder. Name must be unique within the parent folder.",
     inputSchema: EditFolderArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "get-folder-entities": {
     name: "get-folder-entities",
@@ -1743,14 +1743,14 @@ export const TOOL_DEFINITIONS = {
     description:
       "Move entities (prompts, agents, datasets, evaluations, folders, tools, skill collections, smart tables) into a target folder. Omit folder_id to move to workspace root.",
     inputSchema: MoveFolderEntitiesArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "delete-folder-entities": {
     name: "delete-folder-entities",
     description:
       "Permanently delete entities (prompts, agents, datasets, evaluations, folders, tools, skill collections, smart tables). WARNING: This is destructive and cannot be undone. Use cascade=true to recursively delete all folder contents.",
     inputSchema: DeleteFolderEntitiesArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: true },
   },
   "resolve-folder-id": {
     name: "resolve-folder-id",
@@ -1773,7 +1773,7 @@ export const TOOL_DEFINITIONS = {
       "(e.g. 'README.md' or 'src/util.ts'). Provider is auto-detected from file paths if omitted (e.g. .claude/* → 'claude'). " +
       "Names are made unique within the workspace if they collide.",
     inputSchema: CreateSkillCollectionArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "get-skill-collection": {
     name: "get-skill-collection",
@@ -1788,7 +1788,7 @@ export const TOOL_DEFINITIONS = {
     name: "update-skill-collection",
     description: "Rename a skill collection or update its description. To save new file contents as a version, use save-skill-collection-version instead.",
     inputSchema: UpdateSkillCollectionArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
   "save-skill-collection-version": {
     name: "save-skill-collection-version",
@@ -1797,7 +1797,7 @@ export const TOOL_DEFINITIONS = {
       "file_updates (add or overwrite — files not mentioned are carried forward unchanged), " +
       "moves (rename), and deletes (remove). Optionally attach a release_label to the new version.",
     inputSchema: SaveSkillCollectionVersionArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
 
   // ── Analytics ───────────────────────────────────────────────────────
@@ -1859,7 +1859,7 @@ export const TOOL_DEFINITIONS = {
       "Use this for surgical edits (e.g. tweak the system message, add a tool, change temperature) without resending the whole template. " +
       "For a full rewrite, use publish-prompt-template instead.",
     inputSchema: PatchPromptTemplateVersionArgsSchema,
-    annotations: { readOnlyHint: false },
+    annotations: { readOnlyHint: false, destructiveHint: false },
   },
 
 } as const;

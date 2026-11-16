@@ -15,7 +15,7 @@ export function registerAllTools(server: any) {
   const t = TOOL_DEFINITIONS;
 
   function reg(def: (typeof t)[keyof typeof t], call: Parameters<typeof createToolHandler>[0], msg: Parameters<typeof createToolHandler>[1]) {
-    server.tool(def.name, def.description, def.inputSchema.shape, createToolHandler(call, msg));
+    server.tool(def.name, def.description, def.inputSchema.shape, def.annotations, createToolHandler(call, msg));
   }
 
   // Prompt Templates
